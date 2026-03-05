@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ElliottICT Pro — Vercel API by Josh</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#03050d;--panel:#080b16;--p2:#0c1020;--border:#14192e;--b2:#1c2440;
+  --accent:#00cfff;--a2:#9d6fff;--bull:#00e676;--bear:#ff3651;
+  --gold:#ffd166;--text:#d8e8f8;--muted:#364165;
+  --w1:#00cfff;--w2:#9d6fff;--w3:#00e676;--w4:#ff9500;--w5:#e040fb;
+  --wa:#ff3651;--wb:#ffd166;--wc:#ff7043;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:50px;min-height:50px;background:var(--panel);border-bottom:1px solid var(--b2);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;letter-spacing:-.02em;white-space:nowrap;user-select:none}
+.logo .e{color:var(--accent)}.logo .i{color:var(--a2)}
+.logo sup{font-size:.5rem;color:var(--muted);font-weight:400;vertical-align:super}
+.hc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+select.sym{background:var(--p2);border:1px solid var(--b2);color:var(--text);padding:5px 9px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;min-width:150px;}
+select.sym:focus{outline:none;border-color:var(--accent)}
+.tf,.btnx{background:var(--p2);border:1px solid var(--b2);color:var(--muted);padding:5px 10px;border-radius:5px;font-size:.66rem;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.15s;white-space:nowrap;}
+.tf:hover,.tf.on{border-color:var(--accent);color:var(--accent);background:rgba(0,207,255,.06)}
+.btnx{border-color:var(--a2);color:var(--a2)}.btnx:hover{background:rgba(157,111,255,.1)}.btnx:disabled{opacity:.35;cursor:not-allowed}
+.pill{display:flex;align-items:center;gap:5px;font-size:.62rem;padding:4px 9px;border-radius:20px;white-space:nowrap}
+.pill.ok{color:var(--bull);background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.18)}
+.pill.demo{color:var(--gold);background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.18)}
+.pill.err{color:var(--bear);background:rgba(255,54,81,.07);border:1px solid rgba(255,54,81,.18)}
+.blink{width:6px;height:6px;border-radius:50%;animation:blink 1.5s infinite}
+.blink.g{background:var(--bull)}.blink.y{background:var(--gold)}.blink.r{background:var(--bear)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.api-tag{font-size:.55rem;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.06em}
+.api-tag.massive{background:rgba(0,207,255,.12);color:var(--accent);border:1px solid rgba(0,207,255,.2)}
+.api-tag.av{background:rgba(157,111,255,.12);color:var(--a2);border:1px solid rgba(157,111,255,.2)}
+.api-tag.dm{background:rgba(255,209,102,.08);color:var(--gold);border:1px solid rgba(255,209,102,.18)}
+
+.wrap{display:flex;flex:1;overflow:hidden}
+.sb{width:225px;min-width:225px;background:var(--panel);border-right:1px solid var(--b2);overflow-y:auto;display:flex;flex-direction:column}
+.ct{flex:1;display:flex;flex-direction:column;min-width:0}
+.rp{width:255px;min-width:255px;background:var(--panel);border-left:1px solid var(--b2);overflow-y:auto}
+
+.sec{padding:11px 13px;border-bottom:1px solid var(--border)}
+.stit{font-size:.55rem;font-weight:700;letter-spacing:.13em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;font-family:'Syne',sans-serif}
+.pcard{background:var(--p2);border:1px solid var(--b2);border-radius:6px;padding:9px 11px;margin-top:5px}
+.pbig{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;color:var(--accent);letter-spacing:-.02em;line-height:1}
+.pch{font-size:.62rem;margin-top:3px}.pch.u{color:var(--bull)}.pch.d{color:var(--bear)}
+.srow{display:flex;justify-content:space-between;margin-top:4px;font-size:.58rem;color:var(--muted)}.srow span{color:var(--text)}
+
+.chead{padding:7px 14px;border-bottom:1px solid var(--b2);background:var(--panel);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ctit{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;white-space:nowrap}
+.ohlc{display:flex;gap:8px;font-size:.59rem}
+.oi{color:var(--muted)}.oi span{color:var(--text)}
+#cbox{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+svg#mc{width:100%;height:100%}
+
+#ldr{position:absolute;inset:0;background:rgba(3,5,13,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:90;transition:opacity .35s;}
+#ldr.off{opacity:0;pointer-events:none}
+.spin{width:32px;height:32px;border:2px solid var(--b2);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:.7rem;color:var(--accent);letter-spacing:.04em}
+.lsub{font-size:.58rem;color:var(--muted);max-width:320px;text-align:center;line-height:1.5}
+
+#err{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(255,54,81,.1);border:1px solid rgba(255,54,81,.35);color:var(--bear);padding:7px 14px;border-radius:5px;font-size:.65rem;z-index:95;display:none;max-width:92%;text-align:center;line-height:1.5;}
+.bbar{height:28px;background:var(--panel);border-top:1px solid var(--b2);display:flex;align-items:center;padding:0 14px;gap:18px;font-size:.58rem;color:var(--muted);overflow:hidden;}
+.bi{display:flex;gap:4px}.bi span{color:var(--text)}
+
+.tabs{display:flex;border-bottom:1px solid var(--b2)}
+.tab{flex:1;padding:7px;text-align:center;font-size:.58rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:.15s}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.card{margin:8px;background:var(--p2);border:1px solid var(--b2);border-radius:6px;padding:9px 11px;animation:fu .3s both}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ctitle{font-family:'Syne',sans-serif;font-size:.64rem;font-weight:700;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ctitle::before{content:'';display:block;width:2.5px;height:12px;border-radius:2px;background:var(--accent)}
+.arow{display:flex;justify-content:space-between;align-items:center;padding:2.5px 0;border-bottom:1px solid rgba(20,25,46,.55);font-size:.6rem}.arow:last-child{border:none}
+.al{color:var(--muted)}.av{font-weight:700}
+.av.bull{color:var(--bull)}.av.bear{color:var(--bear)}.av.ac{color:var(--accent)}.av.gold{color:var(--gold)}.av.p2{color:var(--a2)}
+.sig{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:.6rem;font-weight:700}
+.sig.buy{background:rgba(0,230,118,.1);color:var(--bull);border:1px solid rgba(0,230,118,.22)}
+.sig.sell{background:rgba(255,54,81,.1);color:var(--bear);border:1px solid rgba(255,54,81,.22)}
+.sig.wait{background:rgba(255,209,102,.07);color:var(--gold);border:1px solid rgba(255,209,102,.18)}
+.cb-wrap{display:flex;gap:2px;margin-top:5px}
+.cb{flex:1;height:5px;border-radius:2px;background:var(--b2);transition:background .35s}
+.cb.a1{background:var(--bull)}.cb.a2{background:var(--gold)}.cb.a3{background:var(--accent)}
+
+#tip{position:absolute;background:var(--panel);border:1px solid var(--b2);border-radius:5px;padding:7px 10px;font-size:.6rem;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;min-width:150px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+#tip.on{opacity:1}
+.tr{display:flex;justify-content:space-between;gap:12px;margin:1.5px 0}.tl{color:var(--muted)}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="logo"><span class="e">Elliott</span><span class="i">ICT</span><sup>PRO</sup></div>
+  <div class="hc">
+    <select class="sym" id="symSel" onchange="onSym()">
+      <optgroup label="💱 Forex">
+        <option value="fx|EURUSD|EUR/USD">EUR/USD</option>
+        <option value="fx|GBPUSD|GBP/USD">GBP/USD</option>
+        <option value="fx|USDJPY|USD/JPY">USD/JPY</option>
+        <option value="fx|AUDUSD|AUD/USD">AUD/USD</option>
+        <option value="fx|USDCAD|USD/CAD">USD/CAD</option>
+        <option value="fx|USDCHF|USD/CHF">USD/CHF</option>
+        <option value="fx|EURGBP|EUR/GBP">EUR/GBP</option>
+        <option value="fx|XAUUSD|XAU/USD (Oro)">XAU/USD (Oro)</option>
+      </optgroup>
+      <optgroup label="₿ Crypto">
+        <option value="crypto|BTCUSD|BTC/USD">BTC/USD</option>
+        <option value="crypto|ETHUSD|ETH/USD">ETH/USD</option>
+        <option value="crypto|SOLUSD|SOL/USD">SOL/USD</option>
+        <option value="crypto|XRPUSD|XRP/USD">XRP/USD</option>
+      </optgroup>
+      <optgroup label="📈 Acciones / ETF">
+        <option value="stock|SPY|SPY (S&P 500)">SPY (S&P 500)</option>
+        <option value="stock|QQQ|QQQ (NASDAQ)">QQQ (NASDAQ)</option>
+        <option value="stock|GLD|GLD (Gold ETF)">GLD (Gold ETF)</option>
+        <option value="stock|AAPL|AAPL (Apple)">AAPL (Apple)</option>
+        <option value="stock|TSLA|TSLA (Tesla)">TSLA (Tesla)</option>
+        <option value="stock|NVDA|NVDA (NVIDIA)">NVDA (NVIDIA)</option>
+        <option value="stock|META|META">META</option>
+        <option value="stock|MSFT|MSFT (Microsoft)">MSFT (Microsoft)</option>
+      </optgroup>
+    </select>
+
+    <!-- ✅ IMPORTANTE: 1H usa mult=1 (no 60) -->
+    <button class="tf on" onclick="onTF('hour',1,this)">1H</button>
+    <button class="tf"    onclick="onTF('day',1,this)">1D</button>
+    <button class="tf"    onclick="onTF('week',1,this)">1W</button>
+
+    <button class="btnx" id="btnLoad" onclick="doLoad()">⚡ Cargar</button>
+
+    <span class="api-tag dm" id="apiTag" style="display:none">—</span>
+    <div class="pill demo" id="pill"><div class="blink y" id="pillDot"></div><span id="pillTxt">Listo</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sb">
+    <div class="sec">
+      <div class="stit">Precio</div>
+      <div class="pcard">
+        <div class="pbig" id="priceD">—</div>
+        <div class="pch" id="priceC">—</div>
+        <div class="srow"><span>Bid</span><span id="bidV">—</span>&nbsp;<span>Ask</span><span id="askV">—</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stit">Fibonacci (Swing 60 velas)</div>
+      <div class="pcard" style="padding:8px 10px;">
+        <div class="srow"><span>0.382</span><span id="f382">—</span></div>
+        <div class="srow"><span>0.500</span><span id="f500">—</span></div>
+        <div class="srow"><span>0.618</span><span id="f618">—</span></div>
+        <div class="srow"><span>1.272</span><span id="f1272">—</span></div>
+        <div class="srow"><span>1.618</span><span id="f1618">—</span></div>
+        <div class="srow"><span>2.618</span><span id="f2618">—</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stit">Capas</div>
+      <div class="srow"><span>FVG</span><span><input type="checkbox" checked onchange="S.layers.fvg=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>Order Blocks</span><span><input type="checkbox" checked onchange="S.layers.ob=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>Liquidity</span><span><input type="checkbox" checked onchange="S.layers.liq=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>Fibonacci</span><span><input type="checkbox" checked onchange="S.layers.fib=this.checked?1:0;renderChart();"></span></div>
+    </div>
+  </div>
+
+  <div class="ct">
+    <div class="chead">
+      <span class="ctit" id="ctit">Selecciona instrumento y presiona ⚡ Cargar</span>
+      <div class="ohlc">
+        <div class="oi">O:<span id="co">—</span></div>
+        <div class="oi">H:<span id="ch">—</span></div>
+        <div class="oi">L:<span id="cl">—</span></div>
+        <div class="oi">C:<span id="cc">—</span></div>
+        <div class="oi">Vol:<span id="cv">—</span></div>
+      </div>
+    </div>
+
+    <div id="cbox">
+      <div id="ldr">
+        <div class="spin"></div>
+        <div class="ltxt" id="ltxt">ElliottICT Pro</div>
+        <div class="lsub" id="lsub">
+          Listo — Selecciona instrumento y presiona ⚡ Cargar<br><br>
+          1) Intentará Polygon (via /api/market)<br>
+          2) Fallback: Alpha Vantage (via /api/market)<br>
+          3) Último recurso: Demo sintético
+        </div>
+      </div>
+
+      <div id="err"></div>
+
+      <svg id="mc"></svg>
+
+      <div id="tip">
+        <div class="tr"><span class="tl">Fecha</span><span id="td">—</span></div>
+        <div class="tr"><span class="tl">O / H / L / C</span><span id="tohc">—</span></div>
+        <div class="tr"><span class="tl">ICT</span><span id="tict" style="color:var(--accent)">—</span></div>
+        <div class="tr"><span class="tl">Onda</span><span id="twv" style="color:var(--w3)">—</span></div>
+      </div>
+    </div>
+
+    <div class="bbar">
+      <div class="bi">Fuente:<span id="b1">—</span></div>
+      <div class="bi">Onda:<span id="b2" style="color:var(--w3)">—</span></div>
+      <div class="bi">Score:<span id="b4">—</span></div>
+      <div class="bi" style="margin-left:auto;font-size:.53rem">Frontend sin keys · Vercel API Routes</div>
+    </div>
+  </div>
+
+  <div class="rp">
+    <div class="tabs">
+      <div class="tab on" onclick="swT('a',this)">Análisis</div>
+      <div class="tab"    onclick="swT('s',this)">Setup</div>
+    </div>
+
+    <div id="ta">
+      <div class="card">
+        <div class="ctitle">Elliott Wave</div>
+        <div class="arow"><span class="al">Ciclo</span><span class="av ac" id="r-ciclo">—</span></div>
+        <div class="arow"><span class="al">Onda actual</span><span class="av ac" id="r-onda">—</span></div>
+        <div class="arow"><span class="al">Siguiente</span><span class="av gold" id="r-next">—</span></div>
+      </div>
+
+      <div class="card">
+        <div class="ctitle">ICT</div>
+        <div class="arow"><span class="al">Sesgo</span><span class="av bull" id="r-bias">—</span></div>
+        <div class="arow"><span class="al">OB cercano</span><span class="av p2" id="r-ob">—</span></div>
+        <div class="arow"><span class="al">FVG cercana</span><span class="av ac" id="r-fvg">—</span></div>
+        <div class="arow"><span class="al">Liquidity</span><span class="av gold" id="r-liq">—</span></div>
+      </div>
+
+      <div class="card">
+        <div class="ctitle">Confluencia</div>
+        <div class="arow"><span class="al">Score</span><span class="av bull" id="r-score">—</span></div>
+        <div class="cb-wrap" id="cbw">
+          <div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div>
+          <div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ts" style="display:none">
+      <div class="card">
+        <div class="ctitle">Setup</div>
+        <div style="text-align:center;margin:7px 0"><span class="sig wait" id="sigB">⏳ SIN DATOS</span></div>
+        <div class="arow"><span class="al">Entrada</span><span class="av ac" id="r-en">—</span></div>
+        <div class="arow"><span class="al">Stop</span><span class="av bear" id="r-sl">—</span></div>
+        <div class="arow"><span class="al">TP1</span><span class="av bull" id="r-t1">—</span></div>
+        <div class="arow"><span class="al">TP2</span><span class="av bull" id="r-t2">—</span></div>
+        <div class="arow"><span class="al">R/R</span><span class="av gold" id="r-rr">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/** =========================================================
+ * ElliottICT Pro (Frontend sin keys)
+ * - Polygon y AlphaVantage se consumen via /api/market (Vercel)
+ * - Fallback: Demo
+ * ========================================================= */
+
+const S = {
+  sym:'fx|EURUSD|EUR/USD',
+  tf:'hour',
+  mult:1, // ✅ 1H=1*hour (no 60)
+  data:[],
+  waves:[],
+  zones:{},
+  az:{},
+  source:'—',
+  layers:{fvg:1,ob:1,liq:1,fib:1}
+};
+
+// ---- Helpers UI ----
+function setPill(kind, txt){
+  const pill=document.getElementById('pill');
+  const dot=document.getElementById('pillDot');
+  pill.className='pill '+(kind==='ok'?'ok':kind==='err'?'err':'demo');
+  dot.className='blink '+(kind==='ok'?'g':kind==='err'?'r':'y');
+  document.getElementById('pillTxt').textContent=txt;
+}
+function setTag(kind, label){
+  const el=document.getElementById('apiTag');
+  if(!label){ el.style.display='none'; return; }
+  el.style.display='inline-block';
+  el.className='api-tag '+(kind==='massive'?'massive':kind==='av'?'av':'dm');
+  el.textContent=label;
+}
+function showLdr(t1,t2){
+  document.getElementById('ldr').classList.remove('off');
+  document.getElementById('ltxt').textContent=t1||'Cargando...';
+  document.getElementById('lsub').textContent=t2||'';
+}
+function hideLdr(){ document.getElementById('ldr').classList.add('off'); }
+function showErr(msg){
+  const e=document.getElementById('err');
+  e.style.display='block';
+  e.textContent=msg;
+}
+function hideErr(){ const e=document.getElementById('err'); e.style.display='none'; e.textContent=''; }
+
+function swT(which, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('ta').style.display = (which==='a')?'block':'none';
+  document.getElementById('ts').style.display = (which==='s')?'block':'none';
+}
+
+function onSym(){
+  S.sym = document.getElementById('symSel').value;
+  document.getElementById('ctit').textContent='Selecciona instrumento y presiona ⚡ Cargar';
+}
+
+function onTF(tf, mult, btn){
+  S.tf=tf; S.mult=mult;
+  document.querySelectorAll('.tf').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function tfLabel(){ return {hour:'1H',day:'1D',week:'1W'}[S.tf] || S.tf; }
+
+function getMeta(sym){
+  const [type,ticker,label]=sym.split('|');
+  const prec={EURUSD:4,GBPUSD:4,USDJPY:3,AUDUSD:4,USDCAD:4,USDCHF:4,EURGBP:4,XAUUSD:2,BTCUSD:1,ETHUSD:2,SOLUSD:3,XRPUSD:4,SPY:2,QQQ:2,GLD:2,AAPL:2,TSLA:2,NVDA:2,META:2,MSFT:2}[ticker]||2;
+  const pip={EURUSD:.0001,GBPUSD:.0001,USDJPY:.01,AUDUSD:.0001,USDCAD:.0001,USDCHF:.0001,EURGBP:.0001,XAUUSD:.1}[ticker]||.01;
+  return {type,ticker,label,prec,pip};
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ---- Fetch via Vercel API Routes (sin keys) ----
+// Contrato esperado del backend:
+//   GET /api/market?provider=polygon|av&type=fx|crypto|stock&ticker=EURUSD&tf=hour&mult=1
+// Respuesta:
+//   { ok: true, source: "Polygon", candles: [{t,o,h,l,c,v}, ...] }
+// o { ok:false, error:"..." }
+async function fetchFromBackend(provider, meta){
+  const base = provider === 'polygon' ? '/api/polygon' : '/api/finnhub';
+  const url = `${base}?type=${encodeURIComponent(meta.type)}&ticker=${encodeURIComponent(meta.ticker)}&tf=${encodeURIComponent(S.tf)}&mult=${encodeURIComponent(S.mult)}`;
+  const r = await fetch(url, {headers:{'Accept':'application/json'}});
+  const j = await r.json().catch(()=> ({}));
+  if(!r.ok || !j || j.ok !== true) {
+    const msg = (j && (j.error || j.message)) ? (j.error || j.message) : `HTTP ${r.status}`;
+    throw new Error(msg);
+  }
+  if(!Array.isArray(j.candles) || j.candles.length < 10) throw new Error('Datos insuficientes');
+  // normaliza t a Date
+  return j.candles.map(x=>({
+    t: new Date(x.t),
+    o:+(+x.o).toFixed(meta.prec),
+    h:+(+x.h).toFixed(meta.prec),
+    l:+(+x.l).toFixed(meta.prec),
+    c:+(+x.c).toFixed(meta.prec),
+    v: Number(x.v||0)
+  })).slice(-100);
+}
+
+// ---- Demo fallback ----
+function makeDemo(meta){
+  const bases={EURUSD:1.082,GBPUSD:1.268,USDJPY:149.5,AUDUSD:0.654,USDCAD:1.352,USDCHF:0.895,EURGBP:0.855,XAUUSD:2340,BTCUSD:67500,ETHUSD:3520,SOLUSD:182,XRPUSD:0.618,SPY:524,QQQ:445,GLD:218,AAPL:189,TSLA:175,NVDA:850,META:490,MSFT:415};
+  const base=bases[meta.ticker]||100, amp=base*.012, n=100;
+  const tfMs=S.tf==='hour'?3600000:S.tf==='day'?86400000:604800000;
+  const segs=[{d:1,b:12,p:.08},{d:-1,b:8,p:.05},{d:1,b:18,p:.16},{d:-1,b:10,p:.07},{d:1,b:11,p:.10},{d:-1,b:12,p:.09},{d:1,b:9,p:.05},{d:-1,b:11,p:.10}];
+  let seed=99,px=base;
+  const rnd=()=>{seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/4294967296};
+  const path=[];
+  segs.forEach(w=>{const step=amp*w.p*10*w.d/w.b;for(let i=0;i<w.b&&path.length<n;i++){px+=step+(rnd()-.5)*amp*.003;path.push(px)}});
+  while(path.length<n){px+=(rnd()-.5)*amp*.002;path.push(px)}
+  const now=Date.now();
+  return path.map((p,i)=>{
+    const v=amp*.4,o=p+(rnd()-.5)*v*.4,c=p+(rnd()-.5)*v;
+    return{t:new Date(now-(n-i)*tfMs),o:+o.toFixed(meta.prec),h:+Math.max(o,c,p+rnd()*.7*v).toFixed(meta.prec),l:+Math.min(o,c,p-rnd()*.7*v).toFixed(meta.prec),c:+c.toFixed(meta.prec),v:Math.floor(rnd()*5000+500)};
+  });
+}
+
+// ---- Main Load ----
+async function doLoad(){
+  const btn=document.getElementById('btnLoad'); btn.disabled=true;
+  hideErr();
+  const meta=getMeta(S.sym);
+
+  showLdr('Conectando (Polygon via /api/market)...','Solicitando OHLCV...');
+  try{
+    const d = await fetchFromBackend('polygon', meta);
+    S.data=d; S.source='Polygon (via Vercel API)';
+    setPill('ok',`Polygon · ${meta.label} · ${tfLabel()}`);
+    setTag('massive','POLYGON');
+    hideLdr(); build(); btn.disabled=false; return;
+  }catch(e1){
+    showLdr('Polygon no disponible — intentando Alpha Vantage...',(e1.message||'').slice(0,120));
+    await sleep(500);
+  }
+
+  try{
+    const d = await fetchFromBackend('av', meta);
+    S.data=d; S.source='Alpha Vantage (via Vercel API)';
+    setPill('ok',`AlphaV · ${meta.label} · ${tfLabel()}`);
+    setTag('av','ALPHA');
+    hideLdr(); build(); btn.disabled=false; return;
+  }catch(e2){
+    showErr(`APIs fallaron: ${(e2.message||'').slice(0,120)} — usando DEMO`);
+    await sleep(300);
+  }
+
+  S.data = makeDemo(meta);
+  S.source = 'Demo sintético';
+  setPill('demo',`Demo · ${meta.label} · ${tfLabel()}`);
+  setTag('dm','DEMO');
+  hideLdr(); build(); btn.disabled=false;
+}
+
+// ---- Elliott pivots (simple) ----
+function detectWaves(data){
+  const n=data.length,cl=data.map(d=>d.c);
+  const win=Math.max(4,Math.floor(n/18));
+  const pivs=[];
+  for(let i=win;i<n-win;i++){
+    const s=cl.slice(i-win,i+win+1),mx=Math.max(...s),mn=Math.min(...s);
+    if(cl[i]>=mx)pivs.push({i,p:data[i].h,type:'H'});
+    else if(cl[i]<=mn)pivs.push({i,p:data[i].l,type:'L'});
+  }
+  const clean=[];
+  for(const pv of pivs){
+    if(!clean.length||clean.at(-1).type!==pv.type) clean.push(pv);
+    else{
+      const l=clean.at(-1);
+      if(pv.type==='H'&&pv.p>l.p) clean[clean.length-1]=pv;
+      if(pv.type==='L'&&pv.p<l.p) clean[clean.length-1]=pv;
+    }
+  }
+  const labels=['0','1','2','3','4','5','A','B','C'];
+  const colors=['#444','#00cfff','#9d6fff','#00e676','#ff9500','#e040fb','#ff3651','#ffd166','#ff7043'];
+  return clean.slice(0,9).map((p,i)=>({...p,label:labels[i]||i,color:colors[i]||'#888',barIdx:p.i}));
+}
+
+// ---- ICT detection (mejorable) ----
+function detectICT(data){
+  const n=data.length,fvgs=[],obs=[],liqs=[];
+  for(let i=1;i<n-1;i++){
+    const a=data[i-1],c=data[i+1];
+    if(c.l>a.h) fvgs.push({type:'bull',top:c.l,bottom:a.h,barL:i-1,barR:i+1});
+    if(c.h<a.l) fvgs.push({type:'bear',top:a.l,bottom:c.h,barL:i-1,barR:i+1});
+  }
+  for(let i=1;i<n-4;i++){
+    const cv=data[i],nx=data.slice(i+1,i+5),avg=nx.reduce((s,d)=>s+d.c,0)/nx.length;
+    if(cv.c<cv.o&&avg>cv.h*1.001) obs.push({type:'bull',top:cv.h,bottom:cv.l,barIdx:i});
+    if(cv.c>cv.o&&avg<cv.l*.999)  obs.push({type:'bear',top:cv.h,bottom:cv.l,barIdx:i});
+  }
+  const sw=Math.max(3,Math.floor(n/22));
+  for(let i=sw;i<n-sw;i++){
+    const L=data.slice(i-sw,i),R=data.slice(i+1,i+sw+1);
+    if(L.every(d=>d.h<=data[i].h)&&R.every(d=>d.h<=data[i].h)) liqs.push({type:'high',price:data[i].h,barIdx:i});
+    if(L.every(d=>d.l>=data[i].l)&&R.every(d=>d.l>=data[i].l)) liqs.push({type:'low',price:data[i].l,barIdx:i});
+  }
+  return {fvgs:fvgs.slice(0,10),obs:obs.slice(0,6),liqs:liqs.slice(0,14)};
+}
+
+// ---- Simple analysis + fibs ----
+function analyze(data,waves,zones){
+  const meta=getMeta(S.sym),n=data.length,last=data[n-1],prev=data[n-2];
+  const sl=data.slice(-60),swL=Math.min(...sl.map(d=>d.l)),swH=Math.max(...sl.map(d=>d.h));
+  const rng=swH-swL;
+  const F=(m)=>+(swH-rng*m).toFixed(meta.prec), FE=(m)=>+(swL+rng*m).toFixed(meta.prec);
+  const fibs={f382:F(.382),f500:F(.5),f618:F(.618),f1272:FE(1.272),f1618:FE(1.618),f2618:FE(2.618),swL,swH,rng};
+
+  const wl=waves.at(-1)?.label||'?';
+  const trend=last.c>data[Math.floor(n/2)].c?'ALCISTA':'BAJISTA';
+  const bull=trend==='ALCISTA';
+  const nearOB=zones.obs?.find(o=>Math.abs(last.c-(o.top+o.bottom)/2)/last.c<.005);
+  const nearFVG=zones.fvgs?.find(f=>Math.abs(last.c-(f.top+f.bottom)/2)/last.c<.004);
+  const hasLiq=zones.liqs?.some(l=>Math.abs(l.price-last.c)/last.c<.01);
+
+  let score=0;
+  if(['3','C'].includes(wl)) score+=2;
+  if(nearOB) score+=2;
+  if(nearFVG) score+=2;
+  if(bull) score+=1;
+  if(hasLiq) score+=1;
+  score=Math.min(score,10);
+
+  const entry=bull?fibs.f618:fibs.f382;
+  const slv=bull?+(entry-rng*.08).toFixed(meta.prec):+(entry+rng*.08).toFixed(meta.prec);
+  const rr=((fibs.f1272-entry)/Math.abs(entry-slv)).toFixed(1);
+  const sigType=score>=7?(bull?'buy':'sell'):'wait';
+
+  return {
+    ...fibs, trend, bull, wl, nearOB, nearFVG, hasLiq, score,
+    entry, sl:slv, tp1:fibs.f1272, tp2:fibs.f1618, rr:`1:${rr}`, sigType,
+    chg:+(last.c-prev.c).toFixed(meta.prec), pct:((last.c-prev.c)/prev.c*100).toFixed(2), isBull:last.c>=prev.c
+  };
+}
+
+function build(){
+  S.waves = detectWaves(S.data);
+  S.zones = detectICT(S.data);
+  S.az    = analyze(S.data, S.waves, S.zones);
+  renderChart();
+  updateUI();
+}
+
+// ---- Chart ----
+const M={t:18,r:66,b:26,l:8};
+function renderChart(){
+  const data=S.data; if(!data.length) return;
+  const meta=getMeta(S.sym),az=S.az,waves=S.waves,zones=S.zones,lay=S.layers;
+
+  const svg=d3.select('#mc'); svg.selectAll('*').remove();
+  const box=document.getElementById('cbox');
+  const cW=box.clientWidth-M.l-M.r, cH=box.clientHeight-M.t-M.b, n=data.length;
+  const g=svg.append('g').attr('transform',`translate(${M.l},${M.t})`);
+  const xS=d3.scaleLinear().domain([0,n-1]).range([0,cW]);
+  const allH=data.map(d=>d.h), allL=data.map(d=>d.l);
+  const pad=(Math.max(...allH)-Math.min(...allL))*.05;
+  const yS=d3.scaleLinear().domain([Math.min(...allL)-pad,Math.max(...allH)+pad]).range([cH,0]);
+
+  // Grid
+  g.append('g').selectAll('l').data(yS.ticks(8)).enter()
+    .append('line').attr('x1',0).attr('x2',cW).attr('y1',d=>yS(d)).attr('y2',d=>yS(d))
+    .attr('stroke','#14192e').attr('stroke-dasharray','3,5');
+
+  // FVG
+  if(lay.fvg){
+    zones.fvgs.slice(0,7).forEach(fvg=>{
+      const y1=yS(fvg.top),y2=yS(fvg.bottom),x1=xS(fvg.barL),x2=Math.min(xS(fvg.barR+28),cW);
+      const fc=fvg.type==='bull'?'rgba(0,207,255,.09)':'rgba(255,54,81,.09)';
+      const bc=fvg.type==='bull'?'rgba(0,207,255,.45)':'rgba(255,54,81,.45)';
+      g.append('rect').attr('x',x1).attr('y',y1).attr('width',x2-x1).attr('height',Math.abs(y2-y1))
+        .attr('fill',fc).attr('stroke',bc).attr('stroke-width',.5).attr('stroke-dasharray','3,2');
+      g.append('text').attr('x',x1+2).attr('y',y1-2).attr('fill',bc).attr('font-size',7).attr('font-family','JetBrains Mono')
+        .text(fvg.type==='bull'?'FVG▲':'FVG▼');
+    });
+  }
+
+  // OB
+  if(lay.ob){
+    zones.obs.slice(0,5).forEach(ob=>{
+      const x=xS(ob.barIdx), xe=Math.min(xS(ob.barIdx+38),cW);
+      const tc=ob.type==='bull'?'rgba(157,111,255,.17)':'rgba(255,54,81,.11)';
+      const bc=ob.type==='bull'?'#9d6fff':'#ff3651';
+      g.append('rect').attr('x',x).attr('y',yS(ob.top)).attr('width',xe-x).attr('height',Math.abs(yS(ob.bottom)-yS(ob.top)))
+        .attr('fill',tc).attr('stroke',bc).attr('stroke-width',.8);
+      g.append('text').attr('x',x+2).attr('y',yS(ob.top)-2).attr('fill',bc).attr('font-size',7).attr('font-family','JetBrains Mono')
+        .text(ob.type==='bull'?'Bull OB':'Bear OB');
+    });
+  }
+
+  // Liquidity
+  if(lay.liq){
+    zones.liqs.slice(0,10).forEach(liq=>{
+      const y=yS(liq.price); if(y<0||y>cH) return;
+      g.append('line').attr('x1',xS(liq.barIdx)).attr('x2',cW).attr('y1',y).attr('y2',y)
+        .attr('stroke','rgba(255,209,102,.4)').attr('stroke-width',.8).attr('stroke-dasharray','4,3');
+      g.append('text').attr('x',cW+2).attr('y',y+3).attr('fill','rgba(255,209,102,.55)').attr('font-size',7).attr('font-family','JetBrains Mono')
+        .text(liq.type==='high'?'↑LIQ':'↓LIQ');
+    });
+  }
+
+  // Fibonacci
+  if(lay.fib && az.f618!=null){
+    [
+      {v:az.f618,l:'0.618',c:'#9d6fff'},
+      {v:az.f382,l:'0.382',c:'#00cfff'},
+      {v:az.f500,l:'0.500',c:'#ffd166'},
+      {v:az.f1272,l:'1.272',c:'#00e676'},
+      {v:az.f1618,l:'1.618',c:'#00e676'},
+      {v:az.f2618,l:'2.618',c:'#e040fb'}
+    ].forEach(f=>{
+      const y=yS(f.v); if(y<0||y>cH) return;
+      g.append('line').attr('x1',0).attr('x2',cW).attr('y1',y).attr('y2',y)
+        .attr('stroke',f.c).attr('stroke-width',.65).attr('stroke-dasharray','7,5').attr('opacity',.52);
+      g.append('text').attr('x',4).attr('y',y-2).attr('fill',f.c).attr('font-size',7).attr('font-family','JetBrains Mono')
+        .attr('opacity',.72).text(`Fib ${f.l} ${f.v.toFixed(meta.prec)}`);
+    });
+  }
+
+  // Candles
+  const bW=Math.max(1.5,cW/n*.68);
+  const cg=g.append('g');
+  data.forEach((d,i)=>{
+    const x=xS(i), bull=d.c>=d.o, col=bull?'#00e676':'#ff3651';
+    const bT=yS(Math.max(d.o,d.c)), bH=Math.max(1,Math.abs(yS(d.o)-yS(d.c)));
+    cg.append('line').attr('x1',x).attr('x2',x).attr('y1',yS(d.h)).attr('y2',yS(d.l))
+      .attr('stroke',col).attr('stroke-width',1);
+    cg.append('rect').attr('x',x-bW/2).attr('y',bT).attr('width',bW).attr('height',bH)
+      .attr('fill',col).attr('opacity',bull?.88:.75)
+      .on('mousemove',ev=>showTip(ev,d,i,meta)).on('mouseleave',hideTip);
+  });
+
+  // Elliott path
+  if(waves.length>=2){
+    const WC={'1':'#00cfff','2':'#9d6fff','3':'#00e676','4':'#ff9500','5':'#e040fb','A':'#ff3651','B':'#ffd166','C':'#ff7043','0':'#888'};
+    for(let i=0;i<waves.length-1;i++){
+      const a=waves[i],b=waves[i+1],col=WC[b.label]||'#888';
+      g.append('line').attr('x1',xS(a.barIdx)).attr('y1',yS(a.p)).attr('x2',xS(b.barIdx)).attr('y2',yS(b.p))
+        .attr('stroke',col).attr('stroke-width',2.2).attr('opacity',.92);
+    }
+    waves.forEach(wp=>{
+      const col=WC[wp.label]||'#888',x=xS(wp.barIdx),y=yS(wp.p);
+      g.append('circle').attr('cx',x).attr('cy',y).attr('r',9).attr('fill','var(--bg)').attr('stroke',col).attr('stroke-width',2);
+      g.append('text').attr('x',x).attr('y',y+4).attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',8.5).attr('font-weight',700).attr('font-family','Syne,sans-serif').text(wp.label);
+    });
+  }
+
+  // Current price line
+  const lc=data[n-1].c,ly=yS(lc);
+  g.append('line').attr('x1',0).attr('x2',cW).attr('y1',ly).attr('y2',ly)
+    .attr('stroke','#00cfff').attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',.85);
+}
+
+// ---- Tooltip ----
+function showTip(ev,d,i,meta){
+  const tip=document.getElementById('tip');
+  const box=document.getElementById('cbox').getBoundingClientRect();
+  let x=ev.clientX-box.left+12, y=ev.clientY-box.top-14;
+  if(x+162>box.width) x-=170;
+  tip.style.left=x+'px'; tip.style.top=y+'px'; tip.classList.add('on');
+
+  document.getElementById('td').textContent=d.t.toLocaleDateString('es-MX');
+  document.getElementById('tohc').textContent=`${d.o.toFixed(meta.prec)} / ${d.h.toFixed(meta.prec)} / ${d.l.toFixed(meta.prec)} / ${d.c.toFixed(meta.prec)}`;
+
+  const fvg=S.zones.fvgs?.find(f=>i>=f.barL&&i<=f.barR+2);
+  const ob =S.zones.obs?.find(o=>i>=o.barIdx&&i<=o.barIdx+3);
+  let ict='—'; if(ob) ict=ob.type==='bull'?'🟣 Bull OB':'🔴 Bear OB'; if(fvg) ict=fvg.type==='bull'?'🔵 FVG▲':'🔴 FVG▼';
+  document.getElementById('tict').textContent=ict;
+
+  const wv=S.waves.find(w=>Math.abs(w.barIdx-i)<4);
+  document.getElementById('twv').textContent=wv?`Onda ${wv.label}`:'—';
+
+  ['co','ch','cl','cc'].forEach((id,ix)=>document.getElementById(id).textContent=[d.o,d.h,d.l,d.c][ix].toFixed(meta.prec));
+  document.getElementById('cv').textContent=d.v?d.v.toLocaleString():'—';
+}
+function hideTip(){ document.getElementById('tip').classList.remove('on'); }
+
+// ---- UI Update ----
+function updateUI(){
+  const meta=getMeta(S.sym),az=S.az,last=S.data.at(-1); if(!last) return;
+
+  document.getElementById('priceD').textContent=last.c.toFixed(meta.prec);
+  const ce=document.getElementById('priceC');
+  ce.textContent=`${az.isBull?'▲':'▼'} ${Math.abs(az.chg)} (${Math.abs(az.pct)}%)`;
+  ce.className='pch '+(az.isBull?'u':'d');
+
+  document.getElementById('bidV').textContent=(last.c-meta.pip).toFixed(meta.prec);
+  document.getElementById('askV').textContent=(last.c+meta.pip).toFixed(meta.prec);
+  document.getElementById('ctit').textContent=`${meta.label} — ${tfLabel()} · ${S.source}`;
+
+  // fib
+  ['f382','f500','f618','f1272','f1618','f2618'].forEach(k=>{
+    const el=document.getElementById(k);
+    if(el) el.textContent = az[k]!=null ? az[k].toFixed(meta.prec) : '—';
+  });
+
+  // right panel
+  document.getElementById('r-ciclo').textContent = ['1','2','3','4','5'].includes(az.wl)?'Impulsivo':'Correctivo';
+  document.getElementById('r-onda').textContent = `Onda ${az.wl}`;
+  const NM={'1':'Onda 2 ▼','2':'Onda 3 ▲','3':'Onda 4 ▼','4':'Onda 5 ▲','5':'Onda A ▼','A':'Onda B ▲','B':'Onda C ▼','C':'Nuevo ciclo ▲'};
+  document.getElementById('r-next').textContent = NM[az.wl] || '—';
+
+  document.getElementById('r-bias').textContent = az.trend;
+  document.getElementById('r-bias').className = 'av ' + (az.bull?'bull':'bear');
+
+  document.getElementById('r-ob').textContent = az.nearOB ? `${az.nearOB.type==='bull'?'Bullish':'Bearish'} OB` : '—';
+  document.getElementById('r-fvg').textContent = az.nearFVG ? `FVG ${az.nearFVG.type==='bull'?'▲':'▼'}` : '—';
+  document.getElementById('r-liq').textContent = az.hasLiq ? 'Pool cercano' : '—';
+
+  document.getElementById('r-score').textContent = `${az.score}/10`;
+  document.getElementById('b1').textContent = S.source.includes('Polygon')?'POLYGON':S.source.includes('Alpha')?'ALPHAV':'DEMO';
+  document.getElementById('b2').textContent = az.wl;
+  document.getElementById('b4').textContent = `${az.score}/10`;
+
+  // Setup tab
+  const sig=document.getElementById('sigB');
+  sig.className='sig '+az.sigType;
+  sig.textContent = az.sigType==='buy'?'🟢 BUY BIAS':az.sigType==='sell'?'🔴 SELL BIAS':'⏳ WAIT';
+  document.getElementById('r-en').textContent = az.entry.toFixed(meta.prec);
+  document.getElementById('r-sl').textContent = az.sl.toFixed(meta.prec);
+  document.getElementById('r-t1').textContent = az.tp1.toFixed(meta.prec);
+  document.getElementById('r-t2').textContent = az.tp2.toFixed(meta.prec);
+  document.getElementById('r-rr').textContent = az.rr;
+
+  // score bar
+  const bars=[...document.querySelectorAll('#cbw .cb')];
+  bars.forEach((b,idx)=>{
+    b.className='cb';
+    if(idx < az.score) b.classList.add(idx<4?'a1':idx<7?'a2':'a3');
+  });
+}
+
+// init
+(function init(){
+  document.getElementById('symSel').value=S.sym;
+  setPill('demo','Listo');
+  setTag(null,null);
+  hideLdr();
+})();
+</script>
+</body>
+</html>
