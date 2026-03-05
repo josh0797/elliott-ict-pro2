@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ElliottICT Pro — Vercel API by Josh</title>
+<title>ElliottICT Pro — Polygon + Finnhub</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
@@ -39,6 +39,7 @@ select.sym:focus{outline:none;border-color:var(--accent)}
 .api-tag.massive{background:rgba(0,207,255,.12);color:var(--accent);border:1px solid rgba(0,207,255,.2)}
 .api-tag.av{background:rgba(157,111,255,.12);color:var(--a2);border:1px solid rgba(157,111,255,.2)}
 .api-tag.dm{background:rgba(255,209,102,.08);color:var(--gold);border:1px solid rgba(255,209,102,.18)}
+.live-tag{font-size:.55rem;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.06em;background:rgba(0,230,118,.12);color:var(--bull);border:1px solid rgba(0,230,118,.2)}
 
 .wrap{display:flex;flex:1;overflow:hidden}
 .sb{width:225px;min-width:225px;background:var(--panel);border-right:1px solid var(--b2);overflow-y:auto;display:flex;flex-direction:column}
@@ -129,15 +130,15 @@ svg#mc{width:100%;height:100%}
       </optgroup>
     </select>
 
-    <!-- ✅ IMPORTANTE: 1H usa mult=1 (no 60) -->
-     <button class="tf on" onclick="onTF('minute',15,this)">15M</button>
+    <button class="tf on" onclick="onTF('minute',15,this)">15M</button>
     <button class="tf" onclick="onTF('hour',1,this)">1H</button>
-    <button class="tf"    onclick="onTF('day',1,this)">1D</button>
-    <button class="tf"    onclick="onTF('week',1,this)">1W</button>
+    <button class="tf" onclick="onTF('day',1,this)">1D</button>
+    <button class="tf" onclick="onTF('week',1,this)">1W</button>
 
     <button class="btnx" id="btnLoad" onclick="doLoad()">⚡ Cargar</button>
 
     <span class="api-tag dm" id="apiTag" style="display:none">—</span>
+    <span class="live-tag" id="liveTag" style="display:none">LIVE</span>
     <div class="pill demo" id="pill"><div class="blink y" id="pillDot"></div><span id="pillTxt">Listo</span></div>
   </div>
 </header>
@@ -147,7 +148,7 @@ svg#mc{width:100%;height:100%}
     <div class="sec">
       <div class="stit">Precio</div>
       <div class="pcard">
-        <div class="pbig" id="priceD">—</div>
+        <div class="pbig" id="priceBig">—</div>
         <div class="pch" id="priceC">—</div>
         <div class="srow"><span>Bid</span><span id="bidV">—</span>&nbsp;<span>Ask</span><span id="askV">—</span></div>
       </div>
@@ -192,9 +193,9 @@ svg#mc{width:100%;height:100%}
         <div class="ltxt" id="ltxt">ElliottICT Pro</div>
         <div class="lsub" id="lsub">
           Listo — Selecciona instrumento y presiona ⚡ Cargar<br><br>
-          1) Intentará Polygon (via /api/market)<br>
-          2) Fallback: Alpha Vantage (via /api/market)<br>
-          3) Último recurso: Demo sintético
+          Forex → Finnhub<br>
+          Crypto/Stocks → Polygon<br>
+          Fallback final → Demo sintético
         </div>
       </div>
 
@@ -214,14 +215,14 @@ svg#mc{width:100%;height:100%}
       <div class="bi">Fuente:<span id="b1">—</span></div>
       <div class="bi">Onda:<span id="b2" style="color:var(--w3)">—</span></div>
       <div class="bi">Score:<span id="b4">—</span></div>
-      <div class="bi" style="margin-left:auto;font-size:.53rem">Frontend sin keys · Vercel API Routes</div>
+      <div class="bi" style="margin-left:auto;font-size:.53rem">Forex → Finnhub · Crypto/Stocks → Polygon</div>
     </div>
   </div>
 
   <div class="rp">
     <div class="tabs">
       <div class="tab on" onclick="swT('a',this)">Análisis</div>
-      <div class="tab"    onclick="swT('s',this)">Setup</div>
+      <div class="tab" onclick="swT('s',this)">Setup</div>
     </div>
 
     <div id="ta">
@@ -267,14 +268,17 @@ svg#mc{width:100%;height:100%}
 <script>
 /** =========================================================
  * ElliottICT Pro (Frontend sin keys)
- * - Polygon y AlphaVantage se consumen via /api/market (Vercel)
- * - Fallback: Demo
+ * - Forex → Finnhub
+ * - Crypto/Stocks → Polygon
+ * - Fallback final → Demo
  * ========================================================= */
+
+let quoteTimer = null;
 
 const S = {
   sym:'fx|EURUSD|EUR/USD',
-  tf:'hour',
-  mult:1, // ✅ 1H=1*hour (no 60)
+  tf:'minute',
+  mult:15,
   data:[],
   waves:[],
   zones:{},
@@ -321,6 +325,9 @@ function swT(which, el){
 function onSym(){
   S.sym = document.getElementById('symSel').value;
   document.getElementById('ctit').textContent='Selecciona instrumento y presiona ⚡ Cargar';
+  if(quoteTimer){ clearInterval(quoteTimer); quoteTimer=null; }
+  const liveTag = document.getElementById('liveTag');
+  if(liveTag) liveTag.style.display='none';
 }
 
 function onTF(tf, mult, btn){
@@ -329,7 +336,13 @@ function onTF(tf, mult, btn){
   btn.classList.add('on');
 }
 
-function tfLabel(){ return {hour:'1H',day:'1D',week:'1W'}[S.tf] || S.tf; }
+function tfLabel(){
+  if(S.tf === 'minute') return `${S.mult}M`;
+  if(S.tf === 'hour') return `${S.mult}H`;
+  if(S.tf === 'day') return `${S.mult}D`;
+  if(S.tf === 'week') return `${S.mult}W`;
+  return S.tf;
+}
 
 function getMeta(sym){
   const [type,ticker,label]=sym.split('|');
@@ -339,30 +352,73 @@ function getMeta(sym){
 }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
+// ---- Live Quote ----
+async function fetchLiveQuote(){
+  try{
+    const [type, ticker] = (S.sym || '').split('|');
+    if(!type || !ticker) return;
+
+    const r = await fetch(`/api/quote?type=${encodeURIComponent(type)}&ticker=${encodeURIComponent(ticker)}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok) throw new Error(j.error || `HTTP ${r.status}`);
+
+    const price = Number(j.quote.c);
+    const meta = getMeta(S.sym);
+
+    const el = document.getElementById('priceBig');
+    if(!el) return;
+
+    const prev = parseFloat(el.textContent) || price;
+    el.textContent = price.toFixed(meta.prec);
+
+    el.style.color = price > prev ? 'var(--bull)' : price < prev ? 'var(--bear)' : 'var(--accent)';
+    setTimeout(() => { if(el) el.style.color = 'var(--accent)'; }, 800);
+
+    const bidEl = document.getElementById('bidV');
+    const askEl = document.getElementById('askV');
+    if(bidEl) bidEl.textContent = (price - meta.pip).toFixed(meta.prec);
+    if(askEl) askEl.textContent = (price + meta.pip).toFixed(meta.prec);
+
+    const liveTag = document.getElementById('liveTag');
+    if(liveTag) liveTag.style.display = 'inline';
+
+  }catch(e){
+    // silencioso
+  }
+}
+
+function startLiveQuote(){
+  const liveTag = document.getElementById('liveTag');
+  if(liveTag) liveTag.style.display = 'none';
+
+  if(quoteTimer) clearInterval(quoteTimer);
+  fetchLiveQuote();
+  quoteTimer = setInterval(fetchLiveQuote, 3000);
+}
+
 // ---- Fetch via Vercel API Routes (sin keys) ----
-// Contrato esperado del backend:
-//   GET /api/market?provider=polygon|av&type=fx|crypto|stock&ticker=EURUSD&tf=hour&mult=1
-// Respuesta:
-//   { ok: true, source: "Polygon", candles: [{t,o,h,l,c,v}, ...] }
-// o { ok:false, error:"..." }
 async function fetchFromBackend(provider, meta){
   const base = provider === 'polygon' ? '/api/polygon' : '/api/finnhub';
   const url = `${base}?type=${encodeURIComponent(meta.type)}&ticker=${encodeURIComponent(meta.ticker)}&tf=${encodeURIComponent(S.tf)}&mult=${encodeURIComponent(S.mult)}`;
   const r = await fetch(url, {headers:{'Accept':'application/json'}});
   const j = await r.json().catch(()=> ({}));
+
   if(!r.ok || !j || j.ok !== true) {
     const msg = (j && (j.error || j.message)) ? (j.error || j.message) : `HTTP ${r.status}`;
     throw new Error(msg);
   }
+
   if(!Array.isArray(j.candles) || j.candles.length < 10) throw new Error('Datos insuficientes');
-  // normaliza t a Date
+
   return j.candles.map(x=>({
     t: new Date(x.t),
     o:+(+x.o).toFixed(meta.prec),
     h:+(+x.h).toFixed(meta.prec),
     l:+(+x.l).toFixed(meta.prec),
     c:+(+x.c).toFixed(meta.prec),
-    v: Number(x.v||0)
+    v:Number(x.v||0)
   })).slice(-100);
 }
 
@@ -370,7 +426,13 @@ async function fetchFromBackend(provider, meta){
 function makeDemo(meta){
   const bases={EURUSD:1.082,GBPUSD:1.268,USDJPY:149.5,AUDUSD:0.654,USDCAD:1.352,USDCHF:0.895,EURGBP:0.855,XAUUSD:2340,BTCUSD:67500,ETHUSD:3520,SOLUSD:182,XRPUSD:0.618,SPY:524,QQQ:445,GLD:218,AAPL:189,TSLA:175,NVDA:850,META:490,MSFT:415};
   const base=bases[meta.ticker]||100, amp=base*.012, n=100;
-  const tfMs=S.tf==='hour'?3600000:S.tf==='day'?86400000:604800000;
+
+  const tfMs =
+    S.tf === 'minute' ? (S.mult * 60000) :
+    S.tf === 'hour'   ? (S.mult * 3600000) :
+    S.tf === 'day'    ? (S.mult * 86400000) :
+    (S.mult * 604800000);
+
   const segs=[{d:1,b:12,p:.08},{d:-1,b:8,p:.05},{d:1,b:18,p:.16},{d:-1,b:10,p:.07},{d:1,b:11,p:.10},{d:-1,b:12,p:.09},{d:1,b:9,p:.05},{d:-1,b:11,p:.10}];
   let seed=99,px=base;
   const rnd=()=>{seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/4294967296};
@@ -378,39 +440,50 @@ function makeDemo(meta){
   segs.forEach(w=>{const step=amp*w.p*10*w.d/w.b;for(let i=0;i<w.b&&path.length<n;i++){px+=step+(rnd()-.5)*amp*.003;path.push(px)}});
   while(path.length<n){px+=(rnd()-.5)*amp*.002;path.push(px)}
   const now=Date.now();
+
   return path.map((p,i)=>{
     const v=amp*.4,o=p+(rnd()-.5)*v*.4,c=p+(rnd()-.5)*v;
-    return{t:new Date(now-(n-i)*tfMs),o:+o.toFixed(meta.prec),h:+Math.max(o,c,p+rnd()*.7*v).toFixed(meta.prec),l:+Math.min(o,c,p-rnd()*.7*v).toFixed(meta.prec),c:+c.toFixed(meta.prec),v:Math.floor(rnd()*5000+500)};
+    return{
+      t:new Date(now-(n-i)*tfMs),
+      o:+o.toFixed(meta.prec),
+      h:+Math.max(o,c,p+rnd()*.7*v).toFixed(meta.prec),
+      l:+Math.min(o,c,p-rnd()*.7*v).toFixed(meta.prec),
+      c:+c.toFixed(meta.prec),
+      v:Math.floor(rnd()*5000+500)
+    };
   });
 }
 
 // ---- Main Load ----
 async function doLoad(){
-  const btn=document.getElementById('btnLoad'); btn.disabled=true;
+  const btn=document.getElementById('btnLoad');
+  btn.disabled=true;
   hideErr();
+
   const meta=getMeta(S.sym);
 
-  showLdr('Conectando (Polygon via /api/market)...','Solicitando OHLCV...');
   try{
+    if(meta.type === 'fx'){
+      showLdr('Conectando con Finnhub...','Solicitando OHLCV de Forex...');
+      const d = await fetchFromBackend('finnhub', meta);
+      S.data = d;
+      S.source = 'Finnhub (Forex)';
+      setPill('ok',`Finnhub · ${meta.label} · ${tfLabel()}`);
+      setTag('av','FINNHUB');
+      hideLdr(); build(); btn.disabled=false; return;
+    }
+
+    showLdr('Conectando con Polygon...','Solicitando OHLCV de Crypto/Stocks...');
     const d = await fetchFromBackend('polygon', meta);
-    S.data=d; S.source='Polygon (via Vercel API)';
+    S.data = d;
+    S.source = 'Polygon';
     setPill('ok',`Polygon · ${meta.label} · ${tfLabel()}`);
     setTag('massive','POLYGON');
     hideLdr(); build(); btn.disabled=false; return;
-  }catch(e1){
-    showLdr('Polygon no disponible — intentando Alpha Vantage...',(e1.message||'').slice(0,120));
-    await sleep(500);
-  }
 
-  try{
-    const d = await fetchFromBackend('av', meta);
-    S.data=d; S.source='Alpha Vantage (via Vercel API)';
-    setPill('ok',`AlphaV · ${meta.label} · ${tfLabel()}`);
-    setTag('av','ALPHA');
-    hideLdr(); build(); btn.disabled=false; return;
-  }catch(e2){
-    showErr(`APIs fallaron: ${(e2.message||'').slice(0,120)} — usando DEMO`);
-    await sleep(300);
+  }catch(e1){
+    showErr(`Proveedor principal falló: ${(e1.message||'').slice(0,120)} — usando DEMO`);
+    await sleep(250);
   }
 
   S.data = makeDemo(meta);
@@ -422,57 +495,70 @@ async function doLoad(){
 
 // ---- Elliott pivots (simple) ----
 function detectWaves(data){
-  const n=data.length,cl=data.map(d=>d.c);
+  const n=data.length, cl=data.map(d=>d.c);
   const win=Math.max(4,Math.floor(n/18));
   const pivs=[];
+
   for(let i=win;i<n-win;i++){
-    const s=cl.slice(i-win,i+win+1),mx=Math.max(...s),mn=Math.min(...s);
-    if(cl[i]>=mx)pivs.push({i,p:data[i].h,type:'H'});
-    else if(cl[i]<=mn)pivs.push({i,p:data[i].l,type:'L'});
+    const s=cl.slice(i-win,i+win+1), mx=Math.max(...s), mn=Math.min(...s);
+    if(cl[i]>=mx) pivs.push({i,p:data[i].h,type:'H'});
+    else if(cl[i]<=mn) pivs.push({i,p:data[i].l,type:'L'});
   }
+
   const clean=[];
   for(const pv of pivs){
-    if(!clean.length||clean.at(-1).type!==pv.type) clean.push(pv);
+    if(!clean.length || clean.at(-1).type!==pv.type) clean.push(pv);
     else{
       const l=clean.at(-1);
       if(pv.type==='H'&&pv.p>l.p) clean[clean.length-1]=pv;
       if(pv.type==='L'&&pv.p<l.p) clean[clean.length-1]=pv;
     }
   }
+
   const labels=['0','1','2','3','4','5','A','B','C'];
   const colors=['#444','#00cfff','#9d6fff','#00e676','#ff9500','#e040fb','#ff3651','#ffd166','#ff7043'];
+
   return clean.slice(0,9).map((p,i)=>({...p,label:labels[i]||i,color:colors[i]||'#888',barIdx:p.i}));
 }
 
-// ---- ICT detection (mejorable) ----
+// ---- ICT detection (base) ----
 function detectICT(data){
   const n=data.length,fvgs=[],obs=[],liqs=[];
+
   for(let i=1;i<n-1;i++){
     const a=data[i-1],c=data[i+1];
     if(c.l>a.h) fvgs.push({type:'bull',top:c.l,bottom:a.h,barL:i-1,barR:i+1});
     if(c.h<a.l) fvgs.push({type:'bear',top:a.l,bottom:c.h,barL:i-1,barR:i+1});
   }
+
   for(let i=1;i<n-4;i++){
     const cv=data[i],nx=data.slice(i+1,i+5),avg=nx.reduce((s,d)=>s+d.c,0)/nx.length;
     if(cv.c<cv.o&&avg>cv.h*1.001) obs.push({type:'bull',top:cv.h,bottom:cv.l,barIdx:i});
     if(cv.c>cv.o&&avg<cv.l*.999)  obs.push({type:'bear',top:cv.h,bottom:cv.l,barIdx:i});
   }
+
   const sw=Math.max(3,Math.floor(n/22));
   for(let i=sw;i<n-sw;i++){
     const L=data.slice(i-sw,i),R=data.slice(i+1,i+sw+1);
     if(L.every(d=>d.h<=data[i].h)&&R.every(d=>d.h<=data[i].h)) liqs.push({type:'high',price:data[i].h,barIdx:i});
     if(L.every(d=>d.l>=data[i].l)&&R.every(d=>d.l>=data[i].l)) liqs.push({type:'low',price:data[i].l,barIdx:i});
   }
+
   return {fvgs:fvgs.slice(0,10),obs:obs.slice(0,6),liqs:liqs.slice(0,14)};
 }
 
 // ---- Simple analysis + fibs ----
 function analyze(data,waves,zones){
-  const meta=getMeta(S.sym),n=data.length,last=data[n-1],prev=data[n-2];
-  const sl=data.slice(-60),swL=Math.min(...sl.map(d=>d.l)),swH=Math.max(...sl.map(d=>d.h));
+  const meta=getMeta(S.sym), n=data.length, last=data[n-1], prev=data[n-2]||data[n-1];
+  const sl=data.slice(-60), swL=Math.min(...sl.map(d=>d.l)), swH=Math.max(...sl.map(d=>d.h));
   const rng=swH-swL;
   const F=(m)=>+(swH-rng*m).toFixed(meta.prec), FE=(m)=>+(swL+rng*m).toFixed(meta.prec);
-  const fibs={f382:F(.382),f500:F(.5),f618:F(.618),f1272:FE(1.272),f1618:FE(1.618),f2618:FE(2.618),swL,swH,rng};
+
+  const fibs={
+    f382:F(.382), f500:F(.5), f618:F(.618),
+    f1272:FE(1.272), f1618:FE(1.618), f2618:FE(2.618),
+    swL, swH, rng
+  };
 
   const wl=waves.at(-1)?.label||'?';
   const trend=last.c>data[Math.floor(n/2)].c?'ALCISTA':'BAJISTA';
@@ -496,8 +582,11 @@ function analyze(data,waves,zones){
 
   return {
     ...fibs, trend, bull, wl, nearOB, nearFVG, hasLiq, score,
-    entry, sl:slv, tp1:fibs.f1272, tp2:fibs.f1618, rr:`1:${rr}`, sigType,
-    chg:+(last.c-prev.c).toFixed(meta.prec), pct:((last.c-prev.c)/prev.c*100).toFixed(2), isBull:last.c>=prev.c
+    entry, sl:slv, tp1:fibs.f1272, tp2:fibs.f1618, rr:`1:${rr}`,
+    sigType,
+    chg:+(last.c-prev.c).toFixed(meta.prec),
+    pct:((last.c-prev.c)/prev.c*100).toFixed(2),
+    isBull:last.c>=prev.c
   };
 }
 
@@ -507,6 +596,7 @@ function build(){
   S.az    = analyze(S.data, S.waves, S.zones);
   renderChart();
   updateUI();
+  startLiveQuote();
 }
 
 // ---- Chart ----
@@ -524,12 +614,12 @@ function renderChart(){
   const pad=(Math.max(...allH)-Math.min(...allL))*.05;
   const yS=d3.scaleLinear().domain([Math.min(...allL)-pad,Math.max(...allH)+pad]).range([cH,0]);
 
-  // Grid
+  S._x = xS; S._y = yS;
+
   g.append('g').selectAll('l').data(yS.ticks(8)).enter()
     .append('line').attr('x1',0).attr('x2',cW).attr('y1',d=>yS(d)).attr('y2',d=>yS(d))
     .attr('stroke','#14192e').attr('stroke-dasharray','3,5');
 
-  // FVG
   if(lay.fvg){
     zones.fvgs.slice(0,7).forEach(fvg=>{
       const y1=yS(fvg.top),y2=yS(fvg.bottom),x1=xS(fvg.barL),x2=Math.min(xS(fvg.barR+28),cW);
@@ -542,7 +632,6 @@ function renderChart(){
     });
   }
 
-  // OB
   if(lay.ob){
     zones.obs.slice(0,5).forEach(ob=>{
       const x=xS(ob.barIdx), xe=Math.min(xS(ob.barIdx+38),cW);
@@ -555,7 +644,6 @@ function renderChart(){
     });
   }
 
-  // Liquidity
   if(lay.liq){
     zones.liqs.slice(0,10).forEach(liq=>{
       const y=yS(liq.price); if(y<0||y>cH) return;
@@ -566,7 +654,6 @@ function renderChart(){
     });
   }
 
-  // Fibonacci
   if(lay.fib && az.f618!=null){
     [
       {v:az.f618,l:'0.618',c:'#9d6fff'},
@@ -584,7 +671,6 @@ function renderChart(){
     });
   }
 
-  // Candles
   const bW=Math.max(1.5,cW/n*.68);
   const cg=g.append('g');
   data.forEach((d,i)=>{
@@ -597,7 +683,6 @@ function renderChart(){
       .on('mousemove',ev=>showTip(ev,d,i,meta)).on('mouseleave',hideTip);
   });
 
-  // Elliott path
   if(waves.length>=2){
     const WC={'1':'#00cfff','2':'#9d6fff','3':'#00e676','4':'#ff9500','5':'#e040fb','A':'#ff3651','B':'#ffd166','C':'#ff7043','0':'#888'};
     for(let i=0;i<waves.length-1;i++){
@@ -613,8 +698,7 @@ function renderChart(){
     });
   }
 
-  // Current price line
-  const lc=data[n-1].c,ly=yS(lc);
+  const lc=data[n-1].c, ly=yS(lc);
   g.append('line').attr('x1',0).attr('x2',cW).attr('y1',ly).attr('y2',ly)
     .attr('stroke','#00cfff').attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',.85);
 }
@@ -645,9 +729,14 @@ function hideTip(){ document.getElementById('tip').classList.remove('on'); }
 
 // ---- UI Update ----
 function updateUI(){
-  const meta=getMeta(S.sym),az=S.az,last=S.data.at(-1); if(!last) return;
+  const meta=getMeta(S.sym), az=S.az, last=S.data.at(-1);
+  if(!last) return;
 
-  document.getElementById('priceD').textContent=last.c.toFixed(meta.prec);
+  const priceBig = document.getElementById('priceBig');
+  if(priceBig && priceBig.textContent === '—'){
+    priceBig.textContent = last.c.toFixed(meta.prec);
+  }
+
   const ce=document.getElementById('priceC');
   ce.textContent=`${az.isBull?'▲':'▼'} ${Math.abs(az.chg)} (${Math.abs(az.pct)}%)`;
   ce.className='pch '+(az.isBull?'u':'d');
@@ -656,13 +745,11 @@ function updateUI(){
   document.getElementById('askV').textContent=(last.c+meta.pip).toFixed(meta.prec);
   document.getElementById('ctit').textContent=`${meta.label} — ${tfLabel()} · ${S.source}`;
 
-  // fib
   ['f382','f500','f618','f1272','f1618','f2618'].forEach(k=>{
     const el=document.getElementById(k);
     if(el) el.textContent = az[k]!=null ? az[k].toFixed(meta.prec) : '—';
   });
 
-  // right panel
   document.getElementById('r-ciclo').textContent = ['1','2','3','4','5'].includes(az.wl)?'Impulsivo':'Correctivo';
   document.getElementById('r-onda').textContent = `Onda ${az.wl}`;
   const NM={'1':'Onda 2 ▼','2':'Onda 3 ▲','3':'Onda 4 ▼','4':'Onda 5 ▲','5':'Onda A ▼','A':'Onda B ▲','B':'Onda C ▼','C':'Nuevo ciclo ▲'};
@@ -676,11 +763,10 @@ function updateUI(){
   document.getElementById('r-liq').textContent = az.hasLiq ? 'Pool cercano' : '—';
 
   document.getElementById('r-score').textContent = `${az.score}/10`;
-  document.getElementById('b1').textContent = S.source.includes('Polygon')?'POLYGON':S.source.includes('Alpha')?'ALPHAV':'DEMO';
+  document.getElementById('b1').textContent = S.source;
   document.getElementById('b2').textContent = az.wl;
   document.getElementById('b4').textContent = `${az.score}/10`;
 
-  // Setup tab
   const sig=document.getElementById('sigB');
   sig.className='sig '+az.sigType;
   sig.textContent = az.sigType==='buy'?'🟢 BUY BIAS':az.sigType==='sell'?'🔴 SELL BIAS':'⏳ WAIT';
@@ -690,7 +776,6 @@ function updateUI(){
   document.getElementById('r-t2').textContent = az.tp2.toFixed(meta.prec);
   document.getElementById('r-rr').textContent = az.rr;
 
-  // score bar
   const bars=[...document.querySelectorAll('#cbw .cb')];
   bars.forEach((b,idx)=>{
     b.className='cb';
@@ -698,7 +783,6 @@ function updateUI(){
   });
 }
 
-// init
 (function init(){
   document.getElementById('symSel').value=S.sym;
   setPill('demo','Listo');
