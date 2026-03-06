@@ -94,6 +94,22 @@ svg#mc{width:100%;height:100%}
 .tr{display:flex;justify-content:space-between;gap:12px;margin:1.5px 0}.tl{color:var(--muted)}
 
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+
+/* ── ICT INSTITUCIONAL ───────────────────────── */
+.ict-badge{font-size:.52rem;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.05em;display:inline-block}
+.ict-badge.bos-bull{background:rgba(0,230,118,.12);color:var(--bull);border:1px solid rgba(0,230,118,.3)}
+.ict-badge.bos-bear{background:rgba(255,54,81,.12);color:var(--bear);border:1px solid rgba(255,54,81,.3)}
+.ict-badge.choch-bull{background:rgba(0,207,255,.12);color:var(--accent);border:1px solid rgba(0,207,255,.3)}
+.ict-badge.choch-bear{background:rgba(157,111,255,.12);color:var(--a2);border:1px solid rgba(157,111,255,.3)}
+.ict-badge.sweep-bull{background:rgba(0,230,118,.08);color:var(--bull);border:1px solid rgba(0,230,118,.2)}
+.ict-badge.sweep-bear{background:rgba(255,54,81,.08);color:var(--bear);border:1px solid rgba(255,54,81,.2)}
+.ict-badge.unconf{opacity:.4}
+.setup-card{margin:8px;border-radius:6px;padding:10px 11px;animation:fu .3s both}
+.setup-card.active{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.25)}
+.setup-card.expired{background:var(--p2);border:1px solid var(--b2);opacity:.55}
+.setup-card.wait{background:var(--p2);border:1px solid var(--b2)}
+.exp-bar{height:3px;border-radius:2px;background:var(--b2);margin-top:6px;overflow:hidden}
+.exp-fill{height:100%;border-radius:2px;background:var(--bull);transition:width .3s}
 </style>
 </head>
 
@@ -172,6 +188,9 @@ svg#mc{width:100%;height:100%}
       <div class="srow"><span>Order Blocks</span><span><input type="checkbox" checked onchange="S.layers.ob=this.checked?1:0;renderChart();"></span></div>
       <div class="srow"><span>Liquidity</span><span><input type="checkbox" checked onchange="S.layers.liq=this.checked?1:0;renderChart();"></span></div>
       <div class="srow"><span>Fibonacci</span><span><input type="checkbox" checked onchange="S.layers.fib=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>Swings</span><span><input type="checkbox" checked onchange="S.layers.swings=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>Sweeps</span><span><input type="checkbox" checked onchange="S.layers.sweeps=this.checked?1:0;renderChart();"></span></div>
+      <div class="srow"><span>BOS / CHoCH</span><span><input type="checkbox" checked onchange="S.layers.struct=this.checked?1:0;renderChart();"></span></div>
     </div>
   </div>
 
@@ -223,6 +242,7 @@ svg#mc{width:100%;height:100%}
     <div class="tabs">
       <div class="tab on" onclick="swT('a',this)">Análisis</div>
       <div class="tab" onclick="swT('s',this)">Setup</div>
+      <div class="tab" onclick="swT('i',this)">ICT</div>
     </div>
 
     <div id="ta">
@@ -262,6 +282,36 @@ svg#mc{width:100%;height:100%}
         <div class="arow"><span class="al">R/R</span><span class="av gold" id="r-rr">—</span></div>
       </div>
     </div>
+
+    <div id="ti" style="display:none">
+      <div class="card">
+        <div class="ctitle">Estructura</div>
+        <div class="arow"><span class="al">Estructura</span><span class="av ac" id="i-struct">—</span></div>
+        <div class="arow"><span class="al">Último Sweep</span><span class="av" id="i-sweep">—</span></div>
+        <div class="arow"><span class="al">Sesión sweep</span><span class="av gold" id="i-sess">—</span></div>
+        <div class="arow"><span class="al">FVG en sweep</span><span class="av ac" id="i-sfvg">—</span></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">BOS / CHoCH</div>
+        <div class="arow"><span class="al">Último BOS</span><span class="av" id="i-bos">—</span></div>
+        <div class="arow"><span class="al">Calidad BOS</span><span class="av" id="i-bosq">—</span></div>
+        <div class="arow"><span class="al">Último CHoCH</span><span class="av" id="i-choch">—</span></div>
+        <div class="arow"><span class="al">CHoCH conf.</span><span class="av" id="i-chochc">—</span></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Setup Institucional</div>
+        <div style="text-align:center;margin:7px 0"><span class="sig wait" id="i-sig">⏳ SIN SETUP</span></div>
+        <div class="arow"><span class="al">Entry</span><span class="av ac" id="i-en">—</span></div>
+        <div class="arow"><span class="al">Stop Loss</span><span class="av bear" id="i-sl">—</span></div>
+        <div class="arow"><span class="al">TP1</span><span class="av bull" id="i-t1">—</span></div>
+        <div class="arow"><span class="al">TP2</span><span class="av bull" id="i-t2">—</span></div>
+        <div class="arow"><span class="al">TP3</span><span class="av bull" id="i-t3">—</span></div>
+        <div class="arow"><span class="al">R/R</span><span class="av gold" id="i-rr">—</span></div>
+        <div class="arow"><span class="al">Score ICT</span><span class="av bull" id="i-score">—</span></div>
+        <div class="arow"><span class="al">Estado</span><span class="av gold" id="i-state">—</span></div>
+        <div class="exp-bar"><div class="exp-fill" id="i-expbar" style="width:100%"></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -283,8 +333,9 @@ const S = {
   waves:[],
   zones:{},
   az:{},
+  analysis:{ swings:[], sweeps:[], bos:[], chochs:[], setups:[], context:{} },
   source:'—',
-  layers:{fvg:1,ob:1,liq:1,fib:1}
+  layers:{fvg:1,ob:1,liq:1,fib:1,swings:1,sweeps:1,struct:1}
 };
 
 // ---- Helpers UI ----
@@ -320,6 +371,7 @@ function swT(which, el){
   el.classList.add('on');
   document.getElementById('ta').style.display = (which==='a')?'block':'none';
   document.getElementById('ts').style.display = (which==='s')?'block':'none';
+  document.getElementById('ti').style.display = (which==='i')?'block':'none';
 }
 
 function onSym(){
@@ -609,12 +661,533 @@ function analyze(data,waves,zones){
   };
 }
 
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  MÓDULO 1 — detectSwings                                     ║
+// ║  Fractal fijo (ventana=2) + filtro de magnitud ATR_14        ║
+// ╚══════════════════════════════════════════════════════════════╝
+function detectSwings(data){
+  const n = data.length;
+  if(n < 10) return [];
+
+  // ATR_14 en cada vela
+  const atr14 = [];
+  for(let i=0; i<n; i++){
+    const start = Math.max(0, i-13);
+    let sum = 0, cnt = 0;
+    for(let j=start+1; j<=i; j++){
+      const tr = Math.max(
+        data[j].h - data[j].l,
+        Math.abs(data[j].h - data[j-1].c),
+        Math.abs(data[j].l - data[j-1].c)
+      );
+      sum += tr; cnt++;
+    }
+    atr14.push(cnt > 0 ? sum/cnt : data[i].h - data[i].l);
+  }
+
+  const swings = [];
+
+  // Fractal fijo: vela i necesita 2 velas a cada lado confirmadas
+  for(let i=2; i<n-2; i++){
+    const atr = atr14[i];
+
+    // Swing High
+    if( data[i].h > data[i-1].h &&
+        data[i].h > data[i-2].h &&
+        data[i].h > data[i+1].h &&
+        data[i].h > data[i+2].h ){
+
+      // Buscar el swing Low previo para medir magnitud
+      const prevL = swings.filter(s=>s.type==='L' && s.idx < i).at(-1);
+      const swingSize = prevL ? Math.abs(data[i].h - prevL.price) : atr * 2;
+      const strength = swingSize >= atr * 1.5 ? 'major'
+                     : swingSize >= atr * 0.5 ? 'minor'
+                     : null;
+      if(strength){
+        swings.push({ idx:i, price:data[i].h, type:'H', strength, atr });
+      }
+    }
+
+    // Swing Low
+    if( data[i].l < data[i-1].l &&
+        data[i].l < data[i-2].l &&
+        data[i].l < data[i+1].l &&
+        data[i].l < data[i+2].l ){
+
+      const prevH = swings.filter(s=>s.type==='H' && s.idx < i).at(-1);
+      const swingSize = prevH ? Math.abs(prevH.price - data[i].l) : atr * 2;
+      const strength = swingSize >= atr * 1.5 ? 'major'
+                     : swingSize >= atr * 0.5 ? 'minor'
+                     : null;
+      if(strength){
+        swings.push({ idx:i, price:data[i].l, type:'L', strength, atr });
+      }
+    }
+  }
+
+  return swings;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  MÓDULO 2 — detectSweeps                                     ║
+// ║  Liquidity Grab: cierre con cuerpo ≥40% + FVG posterior     ║
+// ╚══════════════════════════════════════════════════════════════╝
+function detectSweeps(data, swings){
+  const n = data.length;
+  const sweeps = [];
+
+  // Peso de sesión por hora UTC
+  function sessionWeight(ts){
+    const h = new Date(ts).getUTCHours();
+    if(h >= 7  && h < 10)  return { w:1.0, name:'London' };
+    if(h >= 13 && h < 16)  return { w:1.0, name:'NY'     };
+    if(h >= 16 && h < 19)  return { w:0.6, name:'NY_PM'  };
+    if(h >= 0  && h < 3)   return { w:0.5, name:'Asia'   };
+    return { w:0.2, name:'Off' };
+  }
+
+  // Solo procesar swings major (minor se guarda como low_quality)
+  for(const swing of swings){
+    for(let i = swing.idx + 1; i < Math.min(swing.idx + 15, n - 3); i++){
+      const vela = data[i];
+      const rango = vela.h - vela.l;
+      if(rango === 0) continue;
+
+      // SWEEP BAJISTA — barre un Swing High
+      if( swing.type === 'H' &&
+          vela.h > swing.price &&
+          vela.c < swing.price ){
+
+        const cuerpo = Math.abs(vela.c - vela.o);
+        const bodyRatio = cuerpo / rango;
+        if(bodyRatio < 0.40) continue; // mecha sola → no es sweep institucional
+
+        // Buscar FVG bajista en las siguientes 3 velas (i+1, i+2, i+3)
+        let fvgConfirmed = false, fvgIdx = null;
+        for(let f = i+1; f <= Math.min(i+3, n-2); f++){
+          if(data[f-1].l > data[f+1].h){ // gap bajista real
+            fvgConfirmed = true; fvgIdx = f; break;
+          }
+        }
+
+        const sess = sessionWeight(vela.t);
+        sweeps.push({
+          idx: i, type:'bear',
+          sweptLevel: swing.price, sweptStrength: swing.strength,
+          closeBack: true, bodyRatio,
+          fvgConfirmed, fvgIdx,
+          sessionWeight: sess.w, sessionName: sess.name,
+          low_quality: swing.strength === 'minor' || !fvgConfirmed
+        });
+        break; // un sweep por swing
+      }
+
+      // SWEEP ALCISTA — barre un Swing Low
+      if( swing.type === 'L' &&
+          vela.l < swing.price &&
+          vela.c > swing.price ){
+
+        const cuerpo = Math.abs(vela.c - vela.o);
+        const bodyRatio = cuerpo / rango;
+        if(bodyRatio < 0.40) continue;
+
+        let fvgConfirmed = false, fvgIdx = null;
+        for(let f = i+1; f <= Math.min(i+3, n-2); f++){
+          if(data[f-1].h < data[f+1].l){ // gap alcista real
+            fvgConfirmed = true; fvgIdx = f; break;
+          }
+        }
+
+        const sess = sessionWeight(vela.t);
+        sweeps.push({
+          idx: i, type:'bull',
+          sweptLevel: swing.price, sweptStrength: swing.strength,
+          closeBack: true, bodyRatio,
+          fvgConfirmed, fvgIdx,
+          sessionWeight: sess.w, sessionName: sess.name,
+          low_quality: swing.strength === 'minor' || !fvgConfirmed
+        });
+        break;
+      }
+    }
+  }
+
+  return sweeps;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  MÓDULO 3 — detectBOS                                        ║
+// ║  Ruptura con cuerpo ≥40% + volumen + contexto Elliott        ║
+// ╚══════════════════════════════════════════════════════════════╝
+function detectBOS(data, swings, sweeps, waveContext){
+  const n = data.length;
+  const bosList = [];
+
+  // Volumen promedio de últimas 20 velas
+  function avgVol(i){
+    const slice = data.slice(Math.max(0, i-20), i);
+    const total = slice.reduce((s,d)=>s+d.v, 0);
+    return slice.length > 0 ? total / slice.length : 0;
+  }
+
+  // Estructura previa (últimos 4 swings alternados)
+  function priorStructure(beforeIdx){
+    const recent = swings.filter(s=>s.idx < beforeIdx).slice(-4);
+    if(recent.length < 3) return 'ranging';
+    const types = recent.map(s=>s.type);
+    // Alcista: termina en H con patrón ascendente
+    const lastH = recent.filter(s=>s.type==='H').at(-1);
+    const prevH = recent.filter(s=>s.type==='H').at(-2);
+    const lastL = recent.filter(s=>s.type==='L').at(-1);
+    const prevL = recent.filter(s=>s.type==='L').at(-2);
+    if(lastH && prevH && lastL && prevL){
+      if(lastH.price > prevH.price && lastL.price > prevL.price) return 'bullish';
+      if(lastH.price < prevH.price && lastL.price < prevL.price) return 'bearish';
+    }
+    return 'ranging';
+  }
+
+  // Calidad Elliott
+  function elliottQuality(waveCtx){
+    if(!waveCtx) return 'medium';
+    const w = waveCtx.currentWave;
+    if(['3','5','C'].includes(w)) return 'high';
+    if(w === '1') return 'medium';
+    if(['2','4'].includes(w)) return 'low';
+    return 'medium';
+  }
+
+  // Solo buscar BOS dentro de 8 velas después de un sweep
+  for(const sweep of sweeps){
+    if(sweep.low_quality) continue;
+
+    const searchStart = sweep.idx + 1;
+    const searchEnd   = Math.min(sweep.idx + 8, n - 1);
+
+    // Encontrar el nivel a romper: último swing del tipo opuesto antes del sweep
+    const targetType = sweep.type === 'bull' ? 'H' : 'L';
+    const targetSwing = swings
+      .filter(s => s.type === targetType && s.idx < sweep.idx && s.strength === 'major')
+      .at(-1);
+
+    if(!targetSwing) continue;
+    const brokenLevel = targetSwing.price;
+
+    for(let i = searchStart; i <= searchEnd; i++){
+      const vela = data[i];
+      const rango = vela.h - vela.l;
+      if(rango === 0) continue;
+
+      const av = avgVol(i);
+      const volRatio = av > 0 ? vela.v / av : 1;
+
+      // BOS ALCISTA
+      if( sweep.type === 'bull' &&
+          vela.c > brokenLevel  &&
+          vela.c > vela.o ){      // vela alcista
+
+        const cuerpo = vela.c - vela.o;
+        const bodyRatio = cuerpo / rango;
+        if(bodyRatio < 0.40) continue;
+
+        const confirmed = bodyRatio >= 0.40 && volRatio >= 1.0;
+        const prior = priorStructure(i);
+        const quality = confirmed
+          ? (prior === 'bearish' ? elliottQuality(waveContext) : 'low')
+          : 'low';
+
+        bosList.push({
+          idx: i, type:'bull',
+          brokenLevel, brokenStrength: targetSwing.strength,
+          confirmed, bodyRatio,
+          displacement_vol: volRatio,
+          quality,
+          waveContext: waveContext?.currentWave || null,
+          sweepRef: sweep.idx,
+          priorStructure: prior
+        });
+        break;
+      }
+
+      // BOS BAJISTA
+      if( sweep.type === 'bear' &&
+          vela.c < brokenLevel  &&
+          vela.c < vela.o ){      // vela bajista
+
+        const cuerpo = vela.o - vela.c;
+        const bodyRatio = cuerpo / rango;
+        if(bodyRatio < 0.40) continue;
+
+        const confirmed = bodyRatio >= 0.40 && volRatio >= 1.0;
+        const prior = priorStructure(i);
+        const quality = confirmed
+          ? (prior === 'bullish' ? elliottQuality(waveContext) : 'low')
+          : 'low';
+
+        bosList.push({
+          idx: i, type:'bear',
+          brokenLevel, brokenStrength: targetSwing.strength,
+          confirmed, bodyRatio,
+          displacement_vol: volRatio,
+          quality,
+          waveContext: waveContext?.currentWave || null,
+          sweepRef: sweep.idx,
+          priorStructure: prior
+        });
+        break;
+      }
+    }
+  }
+
+  return bosList;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  MÓDULO 4 — detectCHoCH                                      ║
+// ║  Solo válido post-sweep de swing major                       ║
+// ╚══════════════════════════════════════════════════════════════╝
+function detectCHoCH(data, swings, sweeps){
+  const n = data.length;
+  const chochs = [];
+
+  for(const sweep of sweeps){
+    if(sweep.low_quality) continue; // sweep de minor → ignorar
+
+    // Estructura previa requerida
+    const recentSwings = swings.filter(s => s.idx < sweep.idx).slice(-4);
+    if(recentSwings.length < 3) continue;
+
+    const types = recentSwings.map(s=>s.type).join('');
+
+    // CHoCH ALCISTA: necesita estructura bajista previa (LH→LL) + sweep bull
+    if(sweep.type === 'bull'){
+      // Verificar estructura bajista (últimos highs decrecientes)
+      const recentH = swings.filter(s=>s.type==='H' && s.strength==='major' && s.idx < sweep.idx).slice(-2);
+      if(recentH.length < 1) continue;
+
+      // El nivel a romper es el último Lower High (swing major H antes del sweep)
+      const targetLevel = recentH.at(-1).price;
+
+      // Buscar en velas sweep.idx+1 hasta sweep.idx+6
+      for(let i = sweep.idx+1; i <= Math.min(sweep.idx+6, n-1); i++){
+        const vela = data[i];
+        const rango = vela.h - vela.l;
+        if(rango === 0) continue;
+        if(vela.c > targetLevel && vela.c > vela.o){
+          const cuerpo = vela.c - vela.o;
+          const bodyRatio = cuerpo / rango;
+          if(bodyRatio < 0.35) continue;
+          chochs.push({
+            idx: i, type:'bull',
+            level: targetLevel,
+            priorStructure: 'bearish',
+            sweepRef: sweep.idx,
+            bodyRatio,
+            confirmed: false,  // retroLink() lo actualizará
+            bosRef: null
+          });
+          break;
+        }
+      }
+    }
+
+    // CHoCH BAJISTA: necesita estructura alcista previa + sweep bear
+    if(sweep.type === 'bear'){
+      const recentL = swings.filter(s=>s.type==='L' && s.strength==='major' && s.idx < sweep.idx).slice(-2);
+      if(recentL.length < 1) continue;
+
+      const targetLevel = recentL.at(-1).price;
+
+      for(let i = sweep.idx+1; i <= Math.min(sweep.idx+6, n-1); i++){
+        const vela = data[i];
+        const rango = vela.h - vela.l;
+        if(rango === 0) continue;
+        if(vela.c < targetLevel && vela.c < vela.o){
+          const cuerpo = vela.o - vela.c;
+          const bodyRatio = cuerpo / rango;
+          if(bodyRatio < 0.35) continue;
+          chochs.push({
+            idx: i, type:'bear',
+            level: targetLevel,
+            priorStructure: 'bullish',
+            sweepRef: sweep.idx,
+            bodyRatio,
+            confirmed: false,
+            bosRef: null
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  return chochs;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  retroLink — Conecta CHoCH con su BOS confirmador            ║
+// ║  Función separada y visible: corre después de M3 y M4        ║
+// ╚══════════════════════════════════════════════════════════════╝
+function retroLink(chochs, bosList){
+  for(const choch of chochs){
+    // Buscar un BOS que:
+    // 1. Mismo tipo (bull/bull o bear/bear)
+    // 2. Apareció DESPUÉS del CHoCH
+    // 3. Dentro de ventana de 12 velas
+    // 4. confirmed === true
+    // 5. Comparte el mismo sweep origen
+    const matchBOS = bosList.find(b =>
+      b.type       === choch.type      &&
+      b.idx        >  choch.idx        &&
+      b.idx        <= choch.idx + 12   &&
+      b.confirmed  === true            &&
+      b.sweepRef   === choch.sweepRef
+    );
+
+    if(matchBOS){
+      choch.confirmed = true;
+      choch.bosRef    = matchBOS.idx;
+      matchBOS.chochRef = choch.idx; // el BOS también sabe qué CHoCH confirmó
+    }
+    // Si no hay match → choch.confirmed permanece false → buildSetup lo ignora
+  }
+  return chochs; // mutación in-place + return para claridad
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  MÓDULO 5 — buildSetup                                       ║
+// ║  Solo genera setup si CHoCH confirmed + score ≥ 6            ║
+// ╚══════════════════════════════════════════════════════════════╝
+function buildSetup(data, swings, sweeps, bosList, chochs, waves, zones){
+  const meta = getMeta(S.sym);
+  const n = data.length;
+  const last = data[n-1];
+  const setups = [];
+
+  // Solo CHoCH confirmados
+  const confirmed = chochs.filter(c => c.confirmed);
+  if(!confirmed.length) return { setups:[], context: buildContext(swings, sweeps, bosList, chochs) };
+
+  for(const choch of confirmed){
+    const sweep = sweeps.find(s => s.idx === choch.sweepRef);
+    const bos   = bosList.find(b => b.idx === choch.bosRef);
+    if(!sweep || !bos) continue;
+
+    const isBull = choch.type === 'bull';
+
+    // Zona de interés: FVG o OB más cercano al precio actual
+    const poi = isBull
+      ? zones.fvgs?.find(f => f.type==='bull' && f.bottom < last.c && f.top > last.c * 0.999)
+        || zones.obs?.find(o => o.type==='bull' && o.bottom < last.c)
+      : zones.fvgs?.find(f => f.type==='bear' && f.top > last.c && f.bottom < last.c * 1.001)
+        || zones.obs?.find(o => o.type==='bear' && o.top > last.c);
+
+    // Entry: centro del POI o precio actual si no hay POI
+    const entry = poi
+      ? +((poi.top + poi.bottom) / 2).toFixed(meta.prec)
+      : last.c;
+
+    // Stop: debajo del sweep swept level + buffer ATR * 0.5
+    const atr = swings.find(s => s.idx === sweep.idx - 1)?.atr
+              || (data.slice(-14).reduce((s,d)=>s+(d.h-d.l),0)/14);
+    const sl = isBull
+      ? +(sweep.sweptLevel - atr * 0.5).toFixed(meta.prec)
+      : +(sweep.sweptLevel + atr * 0.5).toFixed(meta.prec);
+
+    const risk = Math.abs(entry - sl);
+    if(risk === 0) continue;
+
+    // TPs: siguiente swing mayor opuesto, 1.272 y 1.618
+    const nextMajor = isBull
+      ? swings.filter(s=>s.type==='H' && s.strength==='major' && s.idx > choch.idx).at(0)
+      : swings.filter(s=>s.type==='L' && s.strength==='major' && s.idx > choch.idx).at(0);
+
+    const tp1 = nextMajor
+      ? nextMajor.price
+      : +(entry + (isBull?1:-1) * risk * 1.272).toFixed(meta.prec);
+    const tp2 = +(entry + (isBull?1:-1) * risk * 1.618).toFixed(meta.prec);
+    const tp3 = +(entry + (isBull?1:-1) * risk * 2.618).toFixed(meta.prec);
+    const rr  = (Math.abs(tp1 - entry) / risk).toFixed(1);
+
+    // Score ICT 0-10
+    let score = 0;
+    if(sweep.fvgConfirmed)          score += 2; // sweep con FVG = agresividad institucional
+    if(choch.confirmed)             score += 2; // CHoCH confirmado por BOS
+    if(bos.quality === 'high')      score += 1; // BOS de alta calidad
+    if(poi)                         score += 1; // POI (FVG/OB) en zona de entrada
+    if(sweep.sessionWeight >= 1.0)  score += 1; // London o NY open
+    if(sweep.sweptStrength==='major')score += 1; // barrió liquidez major
+    const wl = waves.at(-1)?.label;
+    if(['3','C'].includes(wl))      score += 1; // onda Elliott compatible
+    if(bos.confirmed && bos.displacement_vol >= 1.2) score += 1; // volumen institucional
+    score = Math.min(score, 10);
+
+    if(score < 6) continue; // score mínimo para scalping
+
+    // Estado del setup: vigente si dentro de 8 velas desde el trigger
+    const velasDesdeTrigger = n - 1 - bos.idx;
+    const state  = velasDesdeTrigger <= 8 ? 'active' : 'expired';
+    const expPct = Math.max(0, Math.round((1 - velasDesdeTrigger/8) * 100));
+
+    setups.push({
+      type: isBull ? 'buy' : 'sell',
+      entry, sl, tp1, tp2, tp3,
+      rr: `1:${rr}`,
+      score, state, expPct,
+      triggerIdx: bos.idx,
+      sweep, bos, choch,
+      sessionName: sweep.sessionName
+    });
+  }
+
+  // Ordenar por score descendente
+  setups.sort((a,b) => b.score - a.score);
+
+  return {
+    setups,
+    context: buildContext(swings, sweeps, bosList, chochs)
+  };
+}
+
+function buildContext(swings, sweeps, bosList, chochs){
+  const lastSweep  = sweeps.filter(s=>!s.low_quality).at(-1) || null;
+  const lastBOS    = bosList.filter(b=>b.confirmed).at(-1)   || null;
+  const lastCHoCH  = chochs.filter(c=>c.confirmed).at(-1)    || null;
+
+  // Estructura dominante
+  const majors = swings.filter(s=>s.strength==='major').slice(-4);
+  let structure = 'ranging';
+  if(majors.length >= 3){
+    const hs = majors.filter(s=>s.type==='H');
+    const ls = majors.filter(s=>s.type==='L');
+    if(hs.length>=2 && ls.length>=2){
+      if(hs.at(-1).price > hs.at(-2).price && ls.at(-1).price > ls.at(-2).price) structure='bullish';
+      else if(hs.at(-1).price < hs.at(-2).price && ls.at(-1).price < ls.at(-2).price) structure='bearish';
+    }
+  }
+
+  return { structure, lastSweep, lastBOS, lastCHoCH };
+}
+
 function build(){
   S.waves = detectWaves(S.data);
   S.zones = detectICT(S.data);
   S.az    = analyze(S.data, S.waves, S.zones);
+
+  // Pipeline institucional
+  const waveCtx = { currentWave: S.waves.at(-1)?.label || null };
+  const swings  = detectSwings(S.data);
+  const sweeps  = detectSweeps(S.data, swings);
+  const bosList = detectBOS(S.data, swings, sweeps, waveCtx);
+  const chochs  = detectCHoCH(S.data, swings, sweeps);
+  retroLink(chochs, bosList);  // ← función separada visible
+  const { setups, context } = buildSetup(S.data, swings, sweeps, bosList, chochs, S.waves, S.zones);
+
+  S.analysis = { swings, sweeps, bos: bosList, chochs, setups, context };
+
   renderChart();
   updateUI();
+  updateICTPanel();
   startLiveQuote();
 }
 
@@ -720,6 +1293,113 @@ function renderChart(){
   const lc=data[n-1].c, ly=yS(lc);
   g.append('line').attr('x1',0).attr('x2',cW).attr('y1',ly).attr('y2',ly)
     .attr('stroke','#00cfff').attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',.85);
+
+  // ── Eje Y con precios ──
+  g.append('g').attr('transform',`translate(${cW},0)`)
+    .call(d3.axisRight(yS).ticks(7).tickFormat(d=>d.toFixed(meta.prec)))
+    .call(ax=>ax.select('.domain').remove())
+    .call(ax=>ax.selectAll('line').attr('stroke','#14192e'))
+    .call(ax=>ax.selectAll('text').attr('fill','#364165').attr('font-size',8).attr('font-family','JetBrains Mono'));
+
+  // Badge precio actual
+  g.append('rect').attr('x',cW+1).attr('y',ly-8).attr('width',63).attr('height',16).attr('fill','#00cfff').attr('rx',3);
+  g.append('text').attr('x',cW+32).attr('y',ly+4.5).attr('text-anchor','middle')
+    .attr('fill','#000').attr('font-size',8.5).attr('font-weight',700).attr('font-family','JetBrains Mono')
+    .text(lc.toFixed(meta.prec));
+
+  // ── SWINGS (M1) ──
+  if(lay.swings && S.analysis?.swings?.length){
+    S.analysis.swings.forEach(sw=>{
+      const x = xS(sw.idx), y = yS(sw.price);
+      const isMajor = sw.strength === 'major';
+      const col = sw.type==='H'
+        ? (isMajor ? '#ff3651' : 'rgba(255,54,81,.35)')
+        : (isMajor ? '#00e676' : 'rgba(0,230,118,.35)');
+      g.append('circle').attr('cx',x).attr('cy',y).attr('r', isMajor?4:2.5)
+        .attr('fill',col).attr('opacity', isMajor?0.9:0.5);
+      if(isMajor){
+        g.append('text').attr('x',x).attr('y', sw.type==='H' ? y-7 : y+12)
+          .attr('text-anchor','middle').attr('fill',col).attr('font-size',7)
+          .attr('font-family','JetBrains Mono').text(sw.type==='H'?'SH':'SL');
+      }
+    });
+  }
+
+  // ── SWEEPS (M2) ──
+  if(lay.sweeps && S.analysis?.sweeps?.length){
+    S.analysis.sweeps.filter(s=>!s.low_quality).forEach(sw=>{
+      const x = xS(sw.idx), y = yS(sw.sweptLevel);
+      const col = sw.type==='bull' ? '#00e676' : '#ff3651';
+      const label = sw.type==='bull' ? '⚡SWP▲' : '⚡SWP▼';
+      g.append('line').attr('x1',x-8).attr('x2',x+8).attr('y1',y).attr('y2',y)
+        .attr('stroke',col).attr('stroke-width',1.5).attr('opacity',.8);
+      g.append('text').attr('x',x).attr('y', sw.type==='bull'? y+13 : y-5)
+        .attr('text-anchor','middle').attr('fill',col).attr('font-size',7)
+        .attr('font-family','JetBrains Mono').attr('font-weight',700).text(label);
+      // línea punteada al nivel barrido
+      g.append('line').attr('x1',x).attr('x2',Math.min(x+40,cW))
+        .attr('y1',y).attr('y2',y)
+        .attr('stroke',col).attr('stroke-width',.6).attr('stroke-dasharray','3,3').attr('opacity',.4);
+    });
+  }
+
+  // ── BOS y CHoCH (M3 + M4) ──
+  if(lay.struct && S.analysis){
+    // BOS
+    S.analysis.bos.filter(b=>b.confirmed).forEach(b=>{
+      const x = xS(b.idx), y = yS(b.brokenLevel);
+      const col = b.type==='bull' ? '#00e676' : '#ff3651';
+      const qualCol = b.quality==='high'?col : b.quality==='medium'?'#ffd166':'#364165';
+      g.append('line').attr('x1',0).attr('x2',cW).attr('y1',y).attr('y2',y)
+        .attr('stroke',qualCol).attr('stroke-width',1).attr('stroke-dasharray','5,4').attr('opacity',.55);
+      g.append('rect').attr('x',x-1).attr('y',y-9).attr('width',28).attr('height',11)
+        .attr('fill',qualCol).attr('rx',2).attr('opacity',.85);
+      g.append('text').attr('x',x+13).attr('y',y-1).attr('text-anchor','middle')
+        .attr('fill','#000').attr('font-size',7).attr('font-weight',700).attr('font-family','JetBrains Mono')
+        .text(b.type==='bull'?'BOS▲':'BOS▼');
+    });
+
+    // CHoCH confirmed
+    S.analysis.chochs.filter(c=>c.confirmed).forEach(c=>{
+      const x = xS(c.idx), y = yS(c.level);
+      const col = c.type==='bull' ? '#00cfff' : '#9d6fff';
+      g.append('line').attr('x1',0).attr('x2',cW).attr('y1',y).attr('y2',y)
+        .attr('stroke',col).attr('stroke-width',1.2).attr('stroke-dasharray','8,4').attr('opacity',.7);
+      g.append('rect').attr('x',x-1).attr('y',y-9).attr('width',40).attr('height',11)
+        .attr('fill',col).attr('rx',2).attr('opacity',.9);
+      g.append('text').attr('x',x+19).attr('y',y-1).attr('text-anchor','middle')
+        .attr('fill','#000').attr('font-size',7).attr('font-weight',700).attr('font-family','JetBrains Mono')
+        .text(c.type==='bull'?'CHoCH▲':'CHoCH▼');
+    });
+
+    // CHoCH unconfirmed (tenue)
+    S.analysis.chochs.filter(c=>!c.confirmed).forEach(c=>{
+      const x = xS(c.idx), y = yS(c.level);
+      const col = c.type==='bull' ? '#00cfff' : '#9d6fff';
+      g.append('text').attr('x',x).attr('y', c.type==='bull'? y+12: y-5)
+        .attr('fill',col).attr('font-size',7).attr('opacity',.3)
+        .attr('font-family','JetBrains Mono').text('CHoCH?');
+    });
+
+    // Setup activo: líneas Entry / SL / TP
+    const activeSetup = S.analysis.setups.find(s=>s.state==='active');
+    if(activeSetup){
+      const isBull = activeSetup.type==='buy';
+      [
+        {v:activeSetup.entry, l:'ENTRY', c:'#00cfff'},
+        {v:activeSetup.sl,    l:'SL',    c:'#ff3651'},
+        {v:activeSetup.tp1,   l:'TP1',   c:'#00e676'},
+        {v:activeSetup.tp2,   l:'TP2',   c:'#00e676'},
+      ].forEach(tl=>{
+        const yy = yS(tl.v); if(yy<0||yy>cH) return;
+        g.append('line').attr('x1',cW*.6).attr('x2',cW).attr('y1',yy).attr('y2',yy)
+          .attr('stroke',tl.c).attr('stroke-width',1.2).attr('opacity',.75);
+        g.append('text').attr('x',cW*.6-3).attr('y',yy+3).attr('text-anchor','end')
+          .attr('fill',tl.c).attr('font-size',7).attr('font-family','JetBrains Mono')
+          .text(`${tl.l} ${tl.v.toFixed(meta.prec)}`);
+      });
+    }
+  }
 }
 
 // ---- Tooltip ----
@@ -800,6 +1480,103 @@ function updateUI(){
     b.className='cb';
     if(idx < az.score) b.classList.add(idx<4?'a1':idx<7?'a2':'a3');
   });
+}
+
+// ---- ICT Panel Update ----
+function updateICTPanel(){
+  const meta = getMeta(S.sym);
+  const an   = S.analysis;
+  if(!an) return;
+
+  const ctx = an.context;
+
+  // Estructura
+  const structEl = document.getElementById('i-struct');
+  if(structEl){
+    structEl.textContent = ctx.structure==='bullish'?'ALCISTA 📈':ctx.structure==='bearish'?'BAJISTA 📉':'RANGO ↔';
+    structEl.className = 'av ' + (ctx.structure==='bullish'?'bull':ctx.structure==='bearish'?'bear':'gold');
+  }
+
+  // Último sweep
+  const ls = ctx.lastSweep;
+  const sweepEl = document.getElementById('i-sweep');
+  if(sweepEl) sweepEl.textContent = ls ? `${ls.type==='bull'?'▲':'▼'} @ ${ls.sweptLevel.toFixed(meta.prec)}` : '—';
+  if(sweepEl) sweepEl.className = 'av ' + (ls?.type==='bull'?'bull':'bear');
+
+  const sessEl = document.getElementById('i-sess');
+  if(sessEl) sessEl.textContent = ls ? `${ls.sessionName} (w:${ls.sessionWeight})` : '—';
+
+  const sfvgEl = document.getElementById('i-sfvg');
+  if(sfvgEl){
+    sfvgEl.textContent = ls ? (ls.fvgConfirmed ? '✓ FVG confirmado' : '✗ Sin FVG') : '—';
+    sfvgEl.className   = 'av ' + (ls?.fvgConfirmed ? 'bull' : 'bear');
+  }
+
+  // Último BOS
+  const lb = ctx.lastBOS;
+  const bosEl = document.getElementById('i-bos');
+  if(bosEl){
+    bosEl.textContent = lb ? `${lb.type==='bull'?'BOS▲':'BOS▼'} (${lb.brokenLevel.toFixed(meta.prec)})` : '—';
+    bosEl.className   = 'av ' + (lb?.type==='bull'?'bull':'bear');
+  }
+  const bosqEl = document.getElementById('i-bosq');
+  if(bosqEl){
+    bosqEl.textContent = lb ? lb.quality.toUpperCase() : '—';
+    bosqEl.className   = 'av ' + (lb?.quality==='high'?'bull':lb?.quality==='medium'?'gold':'bear');
+  }
+
+  // Último CHoCH
+  const lc2 = ctx.lastCHoCH;
+  const chochEl = document.getElementById('i-choch');
+  if(chochEl){
+    chochEl.textContent = lc2 ? `${lc2.type==='bull'?'CHoCH▲':'CHoCH▼'} @ ${lc2.level.toFixed(meta.prec)}` : '—';
+    chochEl.className   = 'av ' + (lc2?.type==='bull'?'ac':'p2');
+  }
+  const chochcEl = document.getElementById('i-chochc');
+  if(chochcEl){
+    chochcEl.textContent = lc2 ? (lc2.confirmed ? '✓ Confirmado' : '⏳ Sin confirmar') : '—';
+    chochcEl.className   = 'av ' + (lc2?.confirmed ? 'bull' : 'gold');
+  }
+
+  // Setup institucional
+  const setup = an.setups[0] || null; // mejor score
+  const sigEl   = document.getElementById('i-sig');
+  const stateEl = document.getElementById('i-state');
+  const expBar  = document.getElementById('i-expbar');
+
+  if(!setup){
+    if(sigEl){ sigEl.className='sig wait'; sigEl.textContent='⏳ SIN SETUP ICT'; }
+    ['i-en','i-sl','i-t1','i-t2','i-t3','i-rr','i-score'].forEach(id=>{
+      const e=document.getElementById(id); if(e) e.textContent='—';
+    });
+    if(stateEl) stateEl.textContent = '—';
+    if(expBar)  expBar.style.width  = '0%';
+    return;
+  }
+
+  if(sigEl){
+    sigEl.className = 'sig ' + (setup.type==='buy'?'buy':'sell');
+    sigEl.textContent = setup.type==='buy' ? '▲ LONG INSTITUCIONAL' : '▼ SHORT INSTITUCIONAL';
+  }
+
+  const s = document.getElementById('i-en');    if(s) s.textContent = setup.entry.toFixed(meta.prec);
+  const sl= document.getElementById('i-sl');    if(sl) sl.textContent = setup.sl.toFixed(meta.prec);
+  const t1= document.getElementById('i-t1');    if(t1) t1.textContent = setup.tp1.toFixed(meta.prec);
+  const t2= document.getElementById('i-t2');    if(t2) t2.textContent = setup.tp2.toFixed(meta.prec);
+  const t3= document.getElementById('i-t3');    if(t3) t3.textContent = setup.tp3.toFixed(meta.prec);
+  const rr= document.getElementById('i-rr');    if(rr) rr.textContent = setup.rr;
+  const sc= document.getElementById('i-score'); if(sc){
+    sc.textContent = `${setup.score}/10`;
+    sc.className   = 'av ' + (setup.score>=8?'bull':setup.score>=6?'gold':'bear');
+  }
+
+  if(stateEl){
+    stateEl.textContent = setup.state==='active'
+      ? `✓ VIGENTE (${8-(S.data.length-1-setup.triggerIdx)} velas)` : '✗ EXPIRADO';
+    stateEl.className = 'av ' + (setup.state==='active'?'bull':'bear');
+  }
+  if(expBar) expBar.style.width = setup.expPct + '%';
+  if(expBar) expBar.style.background = setup.expPct > 50 ? 'var(--bull)' : setup.expPct > 25 ? '#ffd166' : '#ff3651';
 }
 
 (function init(){
