@@ -151,10 +151,56 @@ svg#mc{width:100%;height:100%}
 .order-badge.stop-buy   {background:rgba(255,149,0,.1);  color:#ff9500;     border:1px solid rgba(255,149,0,.3)}
 .order-badge.stop-sell  {background:rgba(255,209,102,.1);color:var(--gold); border:1px solid rgba(255,209,102,.3)}
 .order-rationale{font-size:.54rem;color:var(--muted);line-height:1.55;padding:5px 7px;background:var(--p2);border-radius:3px;border-left:2px solid var(--b2)}
+
+/* ── ALERTAS ─────────────────────────────────── */
+#alert-container{position:fixed;top:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:340px}
+.alert-toast{background:var(--panel);border-radius:8px;padding:12px 15px;box-shadow:0 4px 24px rgba(0,0,0,.5);pointer-events:all;animation:slideIn .25s ease;border-left:3px solid var(--bull);min-width:280px}
+.alert-toast.sell{border-left-color:var(--bear)}
+.alert-toast.warn{border-left-color:var(--gold)}
+.alert-title{font-size:.68rem;font-weight:700;letter-spacing:.04em;margin-bottom:3px}
+.alert-body{font-size:.58rem;color:var(--muted);line-height:1.5}
+.alert-meta{font-size:.5rem;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between}
+.alert-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.7rem;padding:0;float:right;margin-left:8px}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(20px)}}
+
+.alert-cfg{padding:8px 10px;background:var(--p2);border-radius:5px;margin:6px 8px;border:1px solid var(--b2)}
+.alert-cfg label{font-size:.55rem;color:var(--muted);display:block;margin-bottom:2px}
+.alert-cfg input{background:var(--panel);border:1px solid var(--b2);color:var(--text);padding:3px 6px;border-radius:3px;font-size:.6rem;width:100%;font-family:'JetBrains Mono',monospace}
+.alert-cfg input:focus{outline:none;border-color:var(--accent)}
+.alert-min-score{display:flex;align-items:center;gap:6px;margin-top:4px}
+
+/* ── MTF OVERLAY ─────────────────────────────── */
+.mtf-overlay{position:absolute;top:8px;left:8px;background:rgba(10,14,26,.82);backdrop-filter:blur(4px);border:1px solid var(--b2);border-radius:6px;padding:7px 10px;z-index:50;min-width:160px;pointer-events:none}
+.mtf-title{font-size:.52rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.mtf-row{display:flex;justify-content:space-between;gap:10px;font-size:.57rem;padding:1.5px 0}
+.mtf-label{color:var(--muted)}.mtf-val{font-weight:700}
+.mtf-trend-bull{color:var(--bull)}.mtf-trend-bear{color:var(--bear)}.mtf-trend-range{color:var(--gold)}
+.mtf-align{font-size:.55rem;padding:4px 6px;border-radius:3px;margin-top:4px;text-align:center;font-weight:700}
+.mtf-align.aligned{background:rgba(0,230,118,.1);color:var(--bull);border:1px solid rgba(0,230,118,.2)}
+.mtf-align.conflict{background:rgba(255,54,81,.1);color:var(--bear);border:1px solid rgba(255,54,81,.2)}
+.mtf-align.neutral{background:rgba(255,209,102,.08);color:var(--gold);border:1px solid rgba(255,209,102,.2)}
+
+/* ── ML PANEL ────────────────────────────────── */
+.ml-card{margin:6px 8px;padding:10px 11px;background:var(--p2);border-radius:6px;border:1px solid var(--b2)}
+.ml-title{font-size:.55rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.ml-prob{font-size:1.6rem;font-weight:800;text-align:center;line-height:1;margin:6px 0 2px}
+.ml-prob.high{color:var(--bull)}.ml-prob.med{color:var(--gold)}.ml-prob.low{color:var(--bear)}
+.ml-bar-wrap{height:5px;background:var(--b2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.ml-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.ml-features{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.ml-feat{font-size:.52rem;padding:2px 5px;background:var(--panel);border-radius:3px;display:flex;justify-content:space-between}
+.ml-feat .fk{color:var(--muted)}.ml-feat .fv{font-weight:700}
+.ml-btn{width:100%;margin-top:6px;padding:5px;background:rgba(157,111,255,.1);border:1px solid rgba(157,111,255,.25);color:var(--a2);border-radius:4px;font-size:.58rem;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.15s}
+.ml-btn:hover{background:rgba(157,111,255,.2)}.ml-btn:disabled{opacity:.4;cursor:not-allowed}
+.ml-status{font-size:.5rem;color:var(--muted);text-align:center;margin-top:3px}
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 </head>
 
 <body>
+<!-- Contenedor de alertas toast -->
+<div id="alert-container"></div>
 <header>
   <div class="logo"><span class="e">Elliott</span><span class="i">ICT</span><sup>PRO</sup></div>
   <div class="hc">
@@ -308,6 +354,16 @@ svg#mc{width:100%;height:100%}
 
       <div id="err"></div>
 
+      <!-- MTF Overlay: análisis del timeframe superior -->
+      <div class="mtf-overlay" id="mtf-overlay" style="display:none">
+        <div class="mtf-title">📊 <span id="mtf-tf-label">1H</span> · Timeframe Superior</div>
+        <div class="mtf-row"><span class="mtf-label">Tendencia</span><span class="mtf-val" id="mtf-trend">—</span></div>
+        <div class="mtf-row"><span class="mtf-label">Onda</span><span class="mtf-val" id="mtf-wave">—</span></div>
+        <div class="mtf-row"><span class="mtf-label">Sesgo ICT</span><span class="mtf-val" id="mtf-bias">—</span></div>
+        <div class="mtf-row"><span class="mtf-label">Sweep</span><span class="mtf-val" id="mtf-sweep">—</span></div>
+        <div class="mtf-align neutral" id="mtf-align">↔ Cargando…</div>
+      </div>
+
       <svg id="mc"></svg>
 
       <div id="tip">
@@ -331,6 +387,7 @@ svg#mc{width:100%;height:100%}
       <div class="tab on" onclick="swT('a',this)">Análisis</div>
       <div class="tab" onclick="swT('s',this)">Setup</div>
       <div class="tab" onclick="swT('i',this)">ICT</div>
+      <div class="tab" onclick="swT('m',this)">ML</div>
     </div>
 
     <div id="ta">
@@ -418,6 +475,73 @@ svg#mc{width:100%;height:100%}
   </div>
 </div>
 
+  <!-- TAB ML + ALERTAS -->
+  <div id="tm" style="display:none">
+
+    <!-- ML: Probabilidad de éxito -->
+    <div class="ml-card">
+      <div class="ml-title">
+        <span>🤖 ML · Prob. Éxito</span>
+        <span id="ml-model-tag" style="font-size:.48rem;color:var(--muted)">Sin modelo</span>
+      </div>
+      <div class="ml-prob low" id="ml-prob">--%</div>
+      <div class="ml-bar-wrap"><div class="ml-bar-fill" id="ml-bar" style="width:0%;background:var(--bear)"></div></div>
+      <div class="ml-features" id="ml-features">
+        <div class="ml-feat"><span class="fk">FVG size</span><span class="fv" id="mlf-fvg">—</span></div>
+        <div class="ml-feat"><span class="fk">ATR norm.</span><span class="fv" id="mlf-atr">—</span></div>
+        <div class="ml-feat"><span class="fk">Killzone</span><span class="fv" id="mlf-kz">—</span></div>
+        <div class="ml-feat"><span class="fk">Score ICT</span><span class="fv" id="mlf-score">—</span></div>
+        <div class="ml-feat"><span class="fk">Dist. OB</span><span class="fv" id="mlf-ob">—</span></div>
+        <div class="ml-feat"><span class="fk">Onda</span><span class="fv" id="mlf-wave">—</span></div>
+      </div>
+      <button class="ml-btn" id="ml-train-btn" onclick="mlTrain()">⚡ Entrenar con histórico actual</button>
+      <button class="ml-btn" id="ml-predict-btn" onclick="mlPredict()" disabled style="margin-top:3px;border-color:rgba(0,230,118,.25);color:var(--bull)">🎯 Predecir setup actual</button>
+      <div class="ml-status" id="ml-status">Carga un instrumento y entrena el modelo</div>
+    </div>
+
+    <!-- Configuración de Alertas -->
+    <div class="card">
+      <div class="ctitle">⚡ Alertas</div>
+      <div class="alert-cfg">
+        <label>Score mínimo para alertar</label>
+        <div class="alert-min-score">
+          <input type="range" id="alert-min-score" min="50" max="95" value="75" step="5"
+            oninput="document.getElementById('alert-score-val').textContent=this.value"
+            style="flex:1;accent-color:var(--accent)">
+          <span id="alert-score-val" style="font-size:.65rem;font-weight:700;color:var(--accent);min-width:26px">75</span>
+        </div>
+      </div>
+      <div class="alert-cfg">
+        <label>🔔 Sonido</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:2px">
+          <input type="checkbox" id="alert-sound" checked style="accent-color:var(--accent)">
+          <span style="font-size:.58rem;color:var(--muted)">Activar sonido en alertas</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <input type="checkbox" id="alert-browser" checked style="accent-color:var(--accent)">
+          <span style="font-size:.58rem;color:var(--muted)">Notificación del navegador</span>
+        </div>
+      </div>
+      <div class="alert-cfg">
+        <label>📱 Telegram Bot Token</label>
+        <input type="text" id="tg-token" placeholder="123456789:AAF..." oninput="saveTgConfig()">
+        <label style="margin-top:5px">Chat ID</label>
+        <input type="text" id="tg-chatid" placeholder="-1001234567890" oninput="saveTgConfig()">
+        <div style="font-size:.5rem;color:var(--muted);margin-top:3px">
+          Crea tu bot con @BotFather → obtén el token → envía un mensaje al bot → usa @userinfobot para el chat ID
+        </div>
+      </div>
+      <button class="ml-btn" onclick="testAlert()" style="border-color:rgba(0,207,255,.3);color:var(--accent)">🧪 Probar alerta</button>
+    </div>
+
+    <!-- Historial de alertas -->
+    <div class="card">
+      <div class="ctitle">Historial</div>
+      <div id="alert-history" style="font-size:.54rem;color:var(--muted);padding:4px 0">Sin alertas aún.</div>
+    </div>
+  </div>
+</div>
+
 <script>
 /** =========================================================
  * ElliottICT Pro (Frontend sin keys)
@@ -475,6 +599,7 @@ function swT(which, el){
   document.getElementById('ta').style.display = (which==='a')?'block':'none';
   document.getElementById('ts').style.display = (which==='s')?'block':'none';
   document.getElementById('ti').style.display = (which==='i')?'block':'none';
+  document.getElementById('tm').style.display = (which==='m')?'block':'none';
 }
 
 function onSym(){
@@ -1510,8 +1635,9 @@ function build(){
   renderChart();
   updateUI();
   updateICTPanel();
-  calcRisk();      // recalcular riesgo con el nuevo setup
-  logSignal();     // guardar señal en el log de sesión
+  calcRisk();
+  logSignal();
+  checkAndAlert();   // alertas + MTF + ML
   startLiveQuote();
 }
 
@@ -2343,6 +2469,545 @@ function updateRealtimeBadges(){
   }
 }
 
+
+// ════════════════════════════════════════════════════════════════
+//  SISTEMA DE ALERTAS EN TIEMPO REAL
+//  Canales: banner+sonido en pantalla + Telegram Bot
+// ════════════════════════════════════════════════════════════════
+const AlertEngine = {
+  history: [],
+  lastSetupHash: null,   // evitar alertas repetidas del mismo setup
+
+  // Hash ligero: sym + entry + type
+  hashSetup(setup){
+    return `${S.sym}|${setup.type}|${setup.entry}`;
+  },
+
+  shouldAlert(setup){
+    const minScore = parseInt(document.getElementById('alert-min-score')?.value || 75);
+    if(setup.score < minScore) return false;
+    if(setup.uiState !== 'active') return false;
+    const h = this.hashSetup(setup);
+    if(h === this.lastSetupHash) return false;
+    return true;
+  },
+
+  fire(setup){
+    this.lastSetupHash = this.hashSetup(setup);
+    const isBull = setup.type === 'buy';
+    const meta   = getMeta(S.sym);
+    const msg = {
+      type:       setup.type,
+      instrument: meta.label,
+      direction:  isBull ? 'BUY' : 'SELL',
+      orderType:  document.getElementById('i-order-badge')?.textContent || '—',
+      score:      setup.score,
+      entry:      setup.entry.toFixed(meta.prec),
+      sl:         setup.sl.toFixed(meta.prec),
+      tp1:        setup.tp1.toFixed(meta.prec),
+      rr:         setup.rr,
+      session:    setup.metadata?.sessionName || '—',
+      wave:       setup.waveLabel || '—',
+      setupType:  setup.setupType,
+      ts:         new Date().toLocaleTimeString('es-ES')
+    };
+
+    this.showToast(msg);
+    if(document.getElementById('alert-sound')?.checked)   this.playSound(isBull);
+    if(document.getElementById('alert-browser')?.checked) this.browserNotif(msg);
+    this.sendTelegram(msg);
+    this.addHistory(msg);
+  },
+
+  showToast(msg){
+    const c = document.getElementById('alert-container');
+    if(!c) return;
+    const cls = msg.type === 'buy' ? 'buy' : 'sell';
+    const icon = msg.type === 'buy' ? '🟢' : '🔴';
+    const div = document.createElement('div');
+    div.className = `alert-toast ${cls}`;
+    div.innerHTML = `
+      <button class="alert-close" onclick="this.parentElement.remove()">✕</button>
+      <div class="alert-title">${icon} ${msg.direction} · ${msg.instrument}</div>
+      <div class="alert-body">
+        ${msg.orderType} · Score <strong>${msg.score}/100</strong><br>
+        Entry: <strong>${msg.entry}</strong> · SL: ${msg.sl} · TP1: ${msg.tp1}<br>
+        R/R: ${msg.rr} · Onda: ${msg.wave} · ${msg.session}
+      </div>
+      <div class="alert-meta"><span>${msg.setupType.toUpperCase()}</span><span>${msg.ts}</span></div>`;
+    c.appendChild(div);
+    setTimeout(()=>{
+      div.style.animation = 'slideOut .25s ease forwards';
+      setTimeout(()=>div.remove(), 260);
+    }, 8000);
+  },
+
+  playSound(isBull){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      // Bull: do-mi ascendente, Bear: sol-mi descendente
+      const freqs = isBull ? [523, 659] : [659, 523];
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      osc.frequency.setValueAtTime(freqs[0], ctx.currentTime);
+      osc.frequency.setValueAtTime(freqs[1], ctx.currentTime + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    }catch(e){}
+  },
+
+  browserNotif(msg){
+    if(!('Notification' in window)) return;
+    const req = ()=>{
+      new Notification(`${msg.direction} ${msg.instrument}`, {
+        body: `${msg.orderType} · Score ${msg.score}/100\nEntry: ${msg.entry} | SL: ${msg.sl} | TP1: ${msg.tp1}`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="24" font-size="24">📊</text></svg>'
+      });
+    };
+    if(Notification.permission === 'granted') req();
+    else if(Notification.permission !== 'denied')
+      Notification.requestPermission().then(p=>{ if(p==='granted') req(); });
+  },
+
+  async sendTelegram(msg){
+    const token  = document.getElementById('tg-token')?.value.trim();
+    const chatId = document.getElementById('tg-chatid')?.value.trim();
+    if(!token || !chatId) return;
+
+    const emoji  = msg.type === 'buy' ? '🟢' : '🔴';
+    const text   = [
+      `${emoji} *${msg.direction} ${msg.instrument}*`,
+      `📋 ${msg.orderType}`,
+      `📊 Score: *${msg.score}/100* | Onda: ${msg.wave}`,
+      `⏰ Sesión: ${msg.session} | Setup: ${msg.setupType.toUpperCase()}`,
+      ``,
+      `🎯 Entry: \`${msg.entry}\``,
+      `🛑 Stop:  \`${msg.sl}\``,
+      `✅ TP1:   \`${msg.tp1}\``,
+      `📐 R/R:   ${msg.rr}`,
+      ``,
+      `🕐 ${new Date().toUTCString()}`
+    ].join('\n');
+
+    try{
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode:'Markdown' })
+      });
+    }catch(e){ console.warn('Telegram error:', e.message); }
+  },
+
+  addHistory(msg){
+    this.history.unshift(msg);
+    if(this.history.length > 20) this.history.pop();
+    const el = document.getElementById('alert-history');
+    if(!el) return;
+    el.innerHTML = this.history.slice(0,8).map(m=>{
+      const cls = m.type === 'buy' ? 'color:var(--bull)' : 'color:var(--bear)';
+      return `<div style="padding:3px 0;border-bottom:1px solid var(--b2);${cls}">
+        ${m.direction} ${m.instrument} · ${m.score}/100 · ${m.ts}
+      </div>`;
+    }).join('');
+  }
+};
+
+function saveTgConfig(){
+  try{
+    const cfg = JSON.parse(localStorage.getItem('elliottict_config')||'{}');
+    cfg.tgToken  = document.getElementById('tg-token')?.value  || '';
+    cfg.tgChatId = document.getElementById('tg-chatid')?.value || '';
+    localStorage.setItem('elliottict_config', JSON.stringify(cfg));
+  }catch(e){}
+}
+
+function testAlert(){
+  // Crear setup sintético para test
+  const fakeSetup = {
+    type: 'buy', score: 82, uiState: 'active',
+    setupType: 'impulso', entry: 1.0850, sl: 1.0820, tp1: 1.0900,
+    rr: '1:1.6', waveLabel: '3',
+    metadata: { sessionName: 'London', chochConfirmed: true }
+  };
+  AlertEngine.fire(fakeSetup);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MULTI-TIMEFRAME CONFLUENCE OVERLAY
+//  Carga el TF superior y muestra estructura / sesgo en el chart
+// ════════════════════════════════════════════════════════════════
+const MTF = {
+  data:     null,
+  analysis: null,
+  loading:  false,
+
+  // Mapa: TF actual → TF superior para análisis
+  higherTF(current){
+    const map = {
+      'minute|1': 'minute|15', 'minute|5': 'minute|15',
+      'minute|15': 'hour|1',   'minute|30': 'hour|1',
+      'hour|1': 'hour|4',      'hour|4': 'day|1',
+      'day|1': 'week|1',
+    };
+    return map[`${S.tf}|${S.mult}`] || 'hour|1';
+  },
+
+  tfLabel(tfStr){
+    const [tf, mult] = tfStr.split('|');
+    const m = { 'minute|15':'15M','hour|1':'1H','hour|4':'4H','day|1':'1D','week|1':'1W' };
+    return m[tfStr] || `${mult}${tf[0].toUpperCase()}`;
+  },
+
+  async load(){
+    if(this.loading || !S.sym) return;
+    this.loading = true;
+    const higher = this.higherTF();
+    const [htf, hmult] = higher.split('|');
+
+    document.getElementById('mtf-tf-label').textContent = this.tfLabel(higher);
+
+    // Reutilizar la misma URL de fetch pero con TF superior
+    const meta = getMeta(S.sym);
+    let url = '';
+    if(S.source === 'TwelveData (Forex)'){
+      url = `/api/twelve?symbol=${encodeURIComponent(meta.raw)}&interval=${hmult}${htf==='minute'?'min':htf==='hour'?'h':'day'}&outputsize=100`;
+    } else if(S.source === 'Polygon'){
+      url = `/api/polygon?symbol=${encodeURIComponent(meta.raw)}&multiplier=${hmult}&timespan=${htf}&limit=100`;
+    } else {
+      // Demo: usar los mismos datos actuales con decimación
+      this.analyzeAndShow(S.data);
+      this.loading = false;
+      return;
+    }
+
+    try{
+      const r = await fetch(url);
+      if(!r.ok) throw new Error('MTF fetch failed');
+      const raw = await r.json();
+      // Parsear según fuente
+      const candles = (raw.values || raw.results || []).map(c=>({
+        t: c.datetime||c.t, o:+c.open||+c.o, h:+c.high||+c.h,
+        l:+c.low||+c.l,   c:+c.close||+c.c, v:+c.volume||+c.v||0
+      })).filter(c=>c.h&&c.l).reverse();
+      if(candles.length > 10) this.analyzeAndShow(candles);
+    }catch(e){
+      // Fallback: usar datos actuales
+      this.analyzeAndShow(S.data);
+    }
+    this.loading = false;
+  },
+
+  analyzeAndShow(data){
+    if(!data?.length) return;
+    const swings = detectSwings(data);
+    const sweeps = detectSweeps(data, swings);
+    const bos    = detectBOS(data, swings, sweeps, {});
+    const waves  = detectWaves(data);
+    const lastWave = waves.at(-1)?.label || '?';
+
+    // Tendencia por HH/HL o LH/LL
+    const majors = swings.filter(s=>s.strength==='major').slice(-4);
+    let trend = 'ranging';
+    if(majors.length >= 3){
+      const hs = majors.filter(s=>s.type==='H');
+      const ls = majors.filter(s=>s.type==='L');
+      if(hs.length>=2 && ls.length>=2){
+        if(hs.at(-1).price>hs.at(-2).price && ls.at(-1).price>ls.at(-2).price) trend='bullish';
+        else if(hs.at(-1).price<hs.at(-2).price && ls.at(-1).price<ls.at(-2).price) trend='bearish';
+      }
+    }
+
+    const lastSweep = sweeps.at(-1);
+    const lastBOS   = bos.filter(b=>b.confirmed).at(-1);
+    const bias      = lastBOS?.type === 'bull' ? 'ALCISTA' : lastBOS?.type === 'bear' ? 'BAJISTA' : '—';
+
+    // Mostrar en overlay
+    const trendCls = trend==='bullish'?'mtf-trend-bull':trend==='bearish'?'mtf-trend-bear':'mtf-trend-range';
+    this.setEl('mtf-trend', trend==='bullish'?'📈 ALCISTA':trend==='bearish'?'📉 BAJISTA':'↔ RANGO', trendCls);
+    this.setEl('mtf-wave',  `Onda ${lastWave}`, '');
+    this.setEl('mtf-bias',  bias, bias==='ALCISTA'?'mtf-trend-bull':bias==='BAJISTA'?'mtf-trend-bear':'');
+    this.setEl('mtf-sweep', lastSweep ? `${lastSweep.type==='bull'?'▲':'▼'} ${lastSweep.sweptLevel.toFixed(getMeta(S.sym).prec)}` : '—', '');
+
+    // Alineación con TF actual
+    const currentBias = S.analysis?.context?.structure;
+    const alignEl = document.getElementById('mtf-align');
+    if(alignEl && currentBias){
+      const aligned = (trend==='bullish' && currentBias==='bullish') || (trend==='bearish' && currentBias==='bearish');
+      const conflict = (trend==='bullish' && currentBias==='bearish') || (trend==='bearish' && currentBias==='bullish');
+      if(aligned){ alignEl.className='mtf-align aligned'; alignEl.textContent='✅ ALINEADO — Confluencia HTF confirmada'; }
+      else if(conflict){ alignEl.className='mtf-align conflict'; alignEl.textContent='⚠️ CONFLICTO — HTF opuesto al setup'; }
+      else { alignEl.className='mtf-align neutral'; alignEl.textContent='↔ Neutro — sin confluencia clara'; }
+    }
+
+    document.getElementById('mtf-overlay').style.display = 'block';
+  },
+
+  setEl(id, text, cls){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = text;
+    el.className = 'mtf-val ' + cls;
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+//  MACHINE LEARNING — TensorFlow.js (client-side)
+//  Red neuronal simple entrenada con los setups históricos
+//  Features (6): fvgSize, atrNorm, isKillzone, ictScore, distOB, waveCode
+//  Target: probabilidad de que TP1 se alcance antes que SL
+// ════════════════════════════════════════════════════════════════
+const MLEngine = {
+  model:   null,
+  trained: false,
+  minNorm: null,  // para normalización
+  maxNorm: null,
+
+  // Codificar onda Elliott a número
+  waveCode(label){
+    const m = {'1':0.1,'2':0.2,'3':0.9,'4':0.4,'5':0.6,'A':0.3,'B':0.1,'C':0.7};
+    return m[label] || 0.5;
+  },
+
+  // Extraer features de un setup + datos OHLCV
+  extractFeatures(setup, data, zones){
+    const meta    = getMeta(S.sym);
+    const atr     = data.slice(-14).reduce((s,d)=>s+(d.h-d.l),0)/14 || 1;
+    const fvgSize = setup.fvgQual?.gapSize ? setup.fvgQual.gapSize / atr : 0;
+    const atrNorm = atr / (data.at(-1)?.c || 1);
+    const isKZ    = setup.metadata?.inKillzone ? 1 : 0;
+    const score   = (setup.score || 0) / 100;
+    const nearOB  = zones?.obs?.length
+      ? Math.min(...zones.obs.map(o=>Math.abs(o.top - setup.entry))) / atr
+      : 1;
+    const wave    = this.waveCode(setup.waveLabel);
+    return [fvgSize, atrNorm, isKZ, score, Math.min(nearOB, 3)/3, wave];
+  },
+
+  // Simular resultado histórico: TP1 alcanzado antes que SL en la data posterior
+  simulateOutcome(setup, data, triggerIdx){
+    const future = data.slice(triggerIdx + 1, triggerIdx + 25);
+    if(!future.length) return null;
+    const isBull = setup.type === 'buy';
+    for(const bar of future){
+      if(isBull){
+        if(bar.h >= setup.tp1) return 1;  // win
+        if(bar.l <= setup.sl)  return 0;  // loss
+      } else {
+        if(bar.l <= setup.tp1) return 1;
+        if(bar.h >= setup.sl)  return 0;
+      }
+    }
+    return null; // sin resultado en 25 velas
+  },
+
+  async train(){
+    if(typeof tf === 'undefined'){
+      this.setStatus('⚠️ TensorFlow.js no disponible — verifica conexión', true);
+      return;
+    }
+    const data   = S.data;
+    const zones  = S.zones;
+    const setups = S.analysis?.setups;
+    if(!setups?.length || data.length < 50){
+      this.setStatus('❌ Datos insuficientes. Carga más velas (1D o 1W)', true);
+      return;
+    }
+
+    this.setStatus('⏳ Generando dataset histórico…');
+    document.getElementById('ml-train-btn').disabled = true;
+
+    // Construir dataset recorriendo todos los setups + simulando resultado
+    const xs = [], ys = [];
+    for(const setup of setups){
+      const idx = setup.triggerIdx;
+      if(!idx || idx > data.length - 5) continue;
+      const outcome = this.simulateOutcome(setup, data, idx);
+      if(outcome === null) continue;
+      const feat = this.extractFeatures(setup, data.slice(0, idx+1), zones);
+      if(feat.some(isNaN)) continue;
+      xs.push(feat);
+      ys.push([outcome]);
+    }
+
+    // Aumentar dataset con variaciones sintéticas si tenemos pocos ejemplos
+    const origLen = xs.length;
+    if(origLen < 10){
+      for(let i = 0; i < 40; i++){
+        const base = xs[i % Math.max(origLen,1)];
+        if(!base) continue;
+        const noise = base.map(v => Math.min(1, Math.max(0, v + (Math.random()-.5)*.1)));
+        xs.push(noise);
+        ys.push(ys[i % Math.max(origLen,1)]);
+      }
+    }
+
+    if(xs.length < 5){
+      this.setStatus('❌ Muy pocos setups históricos. Usa 1D o carga más datos.', true);
+      document.getElementById('ml-train-btn').disabled = false;
+      return;
+    }
+
+    // Normalizar
+    const flat = xs.flat();
+    this.minNorm = Array.from({length:6}, (_,i)=>Math.min(...xs.map(r=>r[i])));
+    this.maxNorm = Array.from({length:6}, (_,i)=>Math.max(...xs.map(r=>r[i])));
+    const norm = xs.map(row=>row.map((v,i)=>{
+      const range = this.maxNorm[i]-this.minNorm[i];
+      return range > 0 ? (v - this.minNorm[i]) / range : 0.5;
+    }));
+
+    // Construir red: 6 → 12 → 8 → 1
+    this.model = tf.sequential({
+      layers: [
+        tf.layers.dense({inputShape:[6], units:12, activation:'relu'}),
+        tf.layers.dropout({rate:0.15}),
+        tf.layers.dense({units:8, activation:'relu'}),
+        tf.layers.dense({units:1, activation:'sigmoid'})
+      ]
+    });
+    this.model.compile({ optimizer: tf.train.adam(0.01), loss:'binaryCrossentropy', metrics:['accuracy'] });
+
+    const xTensor = tf.tensor2d(norm);
+    const yTensor = tf.tensor2d(ys);
+
+    this.setStatus(`⏳ Entrenando con ${xs.length} ejemplos…`);
+    await this.model.fit(xTensor, yTensor, {
+      epochs: 60, batchSize: 8, shuffle: true, verbose: 0,
+      callbacks: { onEpochEnd: (epoch, logs)=>{
+        if(epoch % 10 === 0)
+          this.setStatus(`Época ${epoch}/60 · loss: ${logs.loss.toFixed(4)}`);
+      }}
+    });
+
+    xTensor.dispose(); yTensor.dispose();
+    this.trained = true;
+
+    // Guardar pesos en localStorage
+    try{
+      const weights = this.model.getWeights().map(w=>Array.from(w.dataSync()));
+      localStorage.setItem('elliottict_ml_weights', JSON.stringify({
+        weights, minNorm: this.minNorm, maxNorm: this.maxNorm,
+        trainedAt: new Date().toISOString(), samples: xs.length
+      }));
+    }catch(e){}
+
+    document.getElementById('ml-train-btn').disabled  = false;
+    document.getElementById('ml-predict-btn').disabled = false;
+    document.getElementById('ml-model-tag').textContent = `✅ ${xs.length} muestras`;
+    this.setStatus(`✅ Modelo listo · ${xs.length} setups · Predecir →`);
+    this.predict();
+  },
+
+  async predict(){
+    if(!this.trained || !this.model){
+      // Intentar cargar pesos guardados
+      if(!await this.loadSaved()) return;
+    }
+    const setup = S.analysis?.setups?.[0];
+    if(!setup){ this.setStatus('Sin setup activo para predecir'); return; }
+
+    const feat = this.extractFeatures(setup, S.data, S.zones);
+    if(feat.some(isNaN)){ this.setStatus('❌ Features inválidas'); return; }
+
+    // Normalizar con los mismos min/max del entrenamiento
+    const normFeat = feat.map((v,i)=>{
+      const range = this.maxNorm[i] - this.minNorm[i];
+      return range > 0 ? (v - this.minNorm[i]) / range : 0.5;
+    });
+
+    const tensor  = tf.tensor2d([normFeat]);
+    const pred    = this.model.predict(tensor);
+    const prob    = Math.round((await pred.data())[0] * 100);
+    tensor.dispose(); pred.dispose();
+
+    this.showPrediction(prob, feat, setup);
+  },
+
+  showPrediction(prob, feat, setup){
+    const el     = document.getElementById('ml-prob');
+    const bar    = document.getElementById('ml-bar');
+    const cls    = prob>=65?'high':prob>=45?'med':'low';
+    const barClr = prob>=65?'var(--bull)':prob>=45?'var(--gold)':'var(--bear)';
+
+    if(el){ el.textContent = `${prob}%`; el.className = `ml-prob ${cls}`; }
+    if(bar){ bar.style.width=`${prob}%`; bar.style.background=barClr; }
+
+    // Actualizar features display
+    const setText = (id,val)=>{ const e=document.getElementById(id); if(e) e.textContent=val; };
+    const atr = S.data.slice(-14).reduce((s,d)=>s+(d.h-d.l),0)/14 || 1;
+    setText('mlf-fvg',    feat[0].toFixed(2));
+    setText('mlf-atr',    (feat[1]*100).toFixed(3)+'%');
+    setText('mlf-kz',     feat[2]===1?'✓ Sí':'✗ No');
+    setText('mlf-score',  `${Math.round(feat[3]*100)}/100`);
+    setText('mlf-ob',     feat[4].toFixed(2));
+    setText('mlf-wave',   setup.waveLabel || '?');
+    this.setStatus(`Predicción: ${prob}% prob. éxito (TP1 antes que SL)`);
+  },
+
+  async loadSaved(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('elliottict_ml_weights')||'null');
+      if(!saved || typeof tf === 'undefined') return false;
+
+      this.minNorm = saved.minNorm;
+      this.maxNorm = saved.maxNorm;
+      this.model   = tf.sequential({
+        layers: [
+          tf.layers.dense({inputShape:[6], units:12, activation:'relu'}),
+          tf.layers.dropout({rate:0.15}),
+          tf.layers.dense({units:8, activation:'relu'}),
+          tf.layers.dense({units:1, activation:'sigmoid'})
+        ]
+      });
+      this.model.compile({optimizer: tf.train.adam(0.01), loss:'binaryCrossentropy'});
+
+      // Carga de pesos
+      const shapes = [[6,12],[12],[12,8],[8],[8,1],[1]];
+      const tensors = saved.weights.map((w,i)=>tf.tensor(w, shapes[i]));
+      this.model.setWeights(tensors);
+      tensors.forEach(t=>t.dispose());
+
+      this.trained = true;
+      document.getElementById('ml-predict-btn').disabled = false;
+      document.getElementById('ml-model-btn-tag')?.remove();
+      const tag = `✅ Guardado · ${saved.samples} muestras`;
+      document.getElementById('ml-model-tag').textContent = tag;
+      this.setStatus(`Modelo cargado (${new Date(saved.trainedAt).toLocaleDateString()})`);
+      return true;
+    }catch(e){ return false; }
+  },
+
+  setStatus(msg, isErr=false){
+    const el = document.getElementById('ml-status');
+    if(el){ el.textContent = msg; el.style.color = isErr ? 'var(--bear)' : 'var(--muted)'; }
+  }
+};
+
+async function mlTrain()   { await MLEngine.train(); }
+async function mlPredict() { await MLEngine.predict(); }
+
+// ════════════════════════════════════════════════════════════════
+//  INTEGRACIÓN — conectar alertas + MTF + ML al pipeline build()
+//  Se llama desde checkAndAlert() después de build()
+// ════════════════════════════════════════════════════════════════
+function checkAndAlert(){
+  const setup = S.analysis?.setups?.[0];
+  if(!setup) return;
+
+  // Alertas
+  if(AlertEngine.shouldAlert(setup)) AlertEngine.fire(setup);
+
+  // MTF: cargar análisis superior
+  if(S.data.length > 0) MTF.load();
+
+  // ML: predecir si el modelo está entrenado
+  if(MLEngine.trained) MLEngine.predict();
+}
+
 (function init(){
   document.getElementById('symSel').value = S.sym;
   setPill('demo','Listo');
@@ -2352,6 +3017,20 @@ function updateRealtimeBadges(){
   updateSessions();
   setInterval(updateSessions, 60000);
   setInterval(updateRealtimeBadges, 5000);
+
+  // Cargar config Telegram guardada
+  try{
+    const cfg = JSON.parse(localStorage.getItem('elliottict_config')||'{}');
+    if(cfg.tgToken)  document.getElementById('tg-token').value  = cfg.tgToken;
+    if(cfg.tgChatId) document.getElementById('tg-chatid').value = cfg.tgChatId;
+  }catch(e){}
+
+  // Intentar cargar modelo ML guardado
+  setTimeout(()=> MLEngine.loadSaved(), 800);
+
+  // Pedir permiso de notificaciones del navegador
+  if('Notification' in window && Notification.permission === 'default')
+    Notification.requestPermission();
 })();
 </script>
 </body>
