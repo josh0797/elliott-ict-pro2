@@ -243,6 +243,7 @@ svg#mc{width:100%;height:100%}
     <button class="hbtn export" onclick="exportCSV()" title="Exportar señales del día">↓ CSV</button>
     <button class="hbtn export" onclick="exportJSON()" title="Exportar para backtesting">↓ JSON</button>
     <span class="candle-countdown" id="candleCountdown">--:--</span>
+    <span id="db-status-badge" style="font-size:.55rem;color:var(--muted);opacity:0;transition:opacity .3s;font-family:'JetBrains Mono',monospace"></span>
 
     <span class="api-tag dm" id="apiTag" style="display:none">—</span>
     <span class="live-tag" id="liveTag" style="display:none">LIVE</span>
@@ -2375,6 +2376,11 @@ function logSignal(){
   // Evitar duplicados del mismo setup
   if(!S.signalLog.find(s => s.ts === entry.ts && s.entry === entry.entry)){
     S.signalLog.push(entry);
+
+    // ── Guardar en Supabase si score ≥ 70 ──
+    if(entry.score >= 70){
+      saveSignalToDB(entry);   // async, no bloquea el pipeline
+    }
   }
 }
 
@@ -2415,41 +2421,87 @@ function dateTag(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// SUPABASE STUB — estructura lista para conectar
-// Para activar: agrega SUPABASE_URL y SUPABASE_ANON_KEY en Vercel
-// El backend /api/db.js hará el INSERT usando @supabase/supabase-js
+// SUPABASE — guarda señales en /api/db (Vercel → PostgreSQL)
+// Se activa automáticamente para setups con score ≥ 70
 // ════════════════════════════════════════════════════════════════
-async function saveSignalToDB(signal){
-  // Esta función estará activa cuando conectes Supabase
-  // Estructura de tabla sugerida:
-  //   CREATE TABLE signals (
-  //     id          BIGSERIAL PRIMARY KEY,
-  //     ts          TIMESTAMPTZ,
-  //     symbol      TEXT,
-  //     timeframe   TEXT,
-  //     type        TEXT,
-  //     setup_type  TEXT,
-  //     score       INTEGER,
-  //     entry       NUMERIC,
-  //     sl          NUMERIC,
-  //     tp1         NUMERIC,
-  //     tp2         NUMERIC,
-  //     tp3         NUMERIC,
-  //     rr          TEXT,
-  //     session     TEXT,
-  //     wave        TEXT,
-  //     breakdown   TEXT
-  //   );
-  try{
-    const r = await fetch('/api/db', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(signal)
-    });
-    if(!r.ok) console.warn('Supabase: no conectado aún');
-  }catch(e){
-    // Silencioso hasta que se configure Supabase
+const DB = {
+  MIN_SCORE:   70,
+  pendingQueue: [],   // cola si la request falla, reintenta en el siguiente ciclo
+  lastSaved:   null,  // evitar duplicados por misma entry
+
+  async save(signal){
+    // Anti-duplicado: mismo símbolo + entry + tipo en menos de 60s
+    const hash = `${signal.symbol}|${signal.type}|${signal.entry}`;
+    if(this.lastSaved === hash) return;
+
+    // Enriquecer con prob ML si está disponible
+    const mlProbEl = document.getElementById('ml-prob');
+    const mlProb   = mlProbEl ? parseInt(mlProbEl.textContent) || null : null;
+
+    const payload = {
+      ts:        signal.ts,
+      symbol:    signal.symbol,
+      timeframe: signal.timeframe,
+      type:      signal.type,
+      setupType: signal.setupType,
+      score:     signal.score,
+      entry:     signal.entry,
+      sl:        signal.sl,
+      tp1:       signal.tp1,
+      tp2:       signal.tp2,
+      tp3:       signal.tp3,
+      rr:        signal.rr,
+      session:   signal.session,
+      wave:      signal.wave,
+      orderType: document.getElementById('i-order-badge')?.textContent?.replace(/[^\w\s]/g,'').trim() || '—',
+      breakdown: signal.breakdown,
+      mlProb
+    };
+
+    try{
+      const r = await fetch('/api/db', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+      });
+
+      if(r.ok){
+        this.lastSaved = hash;
+        this.showDBBadge('✅ Guardado en DB', 'var(--bull)');
+        console.info(`[DB] Señal guardada: ${signal.symbol} ${signal.type} score:${signal.score}`);
+
+        // Vaciar cola de pendientes si hay
+        while(this.pendingQueue.length){
+          const p = this.pendingQueue.shift();
+          await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).catch(()=>{});
+        }
+      } else {
+        const err = await r.text();
+        console.warn('[DB] Insert failed:', err);
+        this.pendingQueue.push(payload);
+        this.showDBBadge('⚠️ DB: reintentando', 'var(--gold)');
+      }
+    }catch(e){
+      console.warn('[DB] Network error:', e.message);
+      this.pendingQueue.push(payload);
+      this.showDBBadge('⚠️ DB offline', 'var(--gold)');
+    }
+  },
+
+  showDBBadge(msg, color){
+    const el = document.getElementById('db-status-badge');
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = color;
+    el.style.opacity = '1';
+    clearTimeout(this._fadeTimer);
+    this._fadeTimer = setTimeout(()=>{ el.style.opacity='0'; }, 4000);
   }
+};
+
+// Wrapper público — llamado desde logSignal
+async function saveSignalToDB(signal){
+  await DB.save(signal);
 }
 
 // ════════════════════════════════════════════════════════════════
