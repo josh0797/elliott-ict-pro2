@@ -399,8 +399,9 @@ function startLiveQuote(){
 }
 
 // ---- Fetch via Vercel API Routes (sin keys) ----
+// Enrutamiento: fx → /api/twelvedata | crypto → /api/polygon | stock → /api/finnhub
 async function fetchFromBackend(provider, meta){
-  const base = provider === 'polygon' ? '/api/polygon' : '/api/finnhub';
+const base = '/api/market';
   const url = `${base}?type=${encodeURIComponent(meta.type)}&ticker=${encodeURIComponent(meta.ticker)}&tf=${encodeURIComponent(S.tf)}&mult=${encodeURIComponent(S.mult)}`;
   const r = await fetch(url, {headers:{'Accept':'application/json'}});
   const j = await r.json().catch(()=> ({}));
@@ -459,35 +460,53 @@ async function doLoad(){
   const btn=document.getElementById('btnLoad');
   btn.disabled=true;
   hideErr();
-
   const meta=getMeta(S.sym);
 
-  try{
-    if(meta.type === 'fx'){
-      showLdr('Conectando con Finnhub...','Solicitando OHLCV de Forex...');
+  // fx → Twelve Data
+  if(meta.type === 'fx'){
+    try{
+      showLdr('Conectando con Twelve Data...','Solicitando OHLCV de Forex...');
+      const d = await fetchFromBackend('twelvedata', meta);
+      S.data=d; S.source='Twelve Data (Forex)';
+      setPill('ok',`TwelveData · ${meta.label} · ${tfLabel()}`);
+      setTag('av','12DATA');
+      hideLdr(); build(); btn.disabled=false; return;
+    }catch(e){
+      showErr(`Twelve Data falló: ${(e.message||'').slice(0,100)} — usando DEMO`);
+      await sleep(250);
+    }
+
+  // crypto → Polygon
+  } else if(meta.type === 'crypto'){
+    try{
+      showLdr('Conectando con Polygon...','Solicitando OHLCV de Crypto...');
+      const d = await fetchFromBackend('polygon', meta);
+      S.data=d; S.source='Polygon (Crypto)';
+      setPill('ok',`Polygon · ${meta.label} · ${tfLabel()}`);
+      setTag('massive','POLYGON');
+      hideLdr(); build(); btn.disabled=false; return;
+    }catch(e){
+      showErr(`Polygon falló: ${(e.message||'').slice(0,100)} — usando DEMO`);
+      await sleep(250);
+    }
+
+  // stock → Finnhub
+  } else {
+    try{
+      showLdr('Conectando con Finnhub...','Solicitando OHLCV de Stocks...');
       const d = await fetchFromBackend('finnhub', meta);
-      S.data = d;
-      S.source = 'Finnhub (Forex)';
+      S.data=d; S.source='Finnhub (Stocks)';
       setPill('ok',`Finnhub · ${meta.label} · ${tfLabel()}`);
       setTag('av','FINNHUB');
       hideLdr(); build(); btn.disabled=false; return;
+    }catch(e){
+      showErr(`Finnhub falló: ${(e.message||'').slice(0,100)} — usando DEMO`);
+      await sleep(250);
     }
-
-    showLdr('Conectando con Polygon...','Solicitando OHLCV de Crypto/Stocks...');
-    const d = await fetchFromBackend('polygon', meta);
-    S.data = d;
-    S.source = 'Polygon';
-    setPill('ok',`Polygon · ${meta.label} · ${tfLabel()}`);
-    setTag('massive','POLYGON');
-    hideLdr(); build(); btn.disabled=false; return;
-
-  }catch(e1){
-    showErr(`Proveedor principal falló: ${(e1.message||'').slice(0,120)} — usando DEMO`);
-    await sleep(250);
   }
 
-  S.data = makeDemo(meta);
-  S.source = 'Demo sintético';
+  // Demo fallback
+  S.data=makeDemo(meta); S.source='Demo sintético';
   setPill('demo',`Demo · ${meta.label} · ${tfLabel()}`);
   setTag('dm','DEMO');
   hideLdr(); build(); btn.disabled=false;
