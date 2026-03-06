@@ -95,7 +95,38 @@ svg#mc{width:100%;height:100%}
 
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
 
-/* ── ICT INSTITUCIONAL ───────────────────────── */
+/* ── NUEVAS FEATURES ─────────────────────────── */
+.risk-panel{padding:10px 13px;border-bottom:1px solid var(--border)}
+.risk-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:.58rem}
+.risk-row .rl{color:var(--muted)}.risk-row .rv{font-weight:700;color:var(--text)}
+.risk-row .rv.red{color:var(--bear)}.risk-row .rv.grn{color:var(--bull)}.risk-row .rv.blu{color:var(--accent)}
+.risk-input{background:var(--p2);border:1px solid var(--b2);color:var(--text);padding:3px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.62rem;width:80px;text-align:right}
+.risk-input:focus{outline:none;border-color:var(--accent)}
+.risk-warning{background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.2);border-radius:4px;padding:5px 8px;font-size:.55rem;color:var(--gold);margin-top:6px}
+
+.sess-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px 13px;border-bottom:1px solid var(--border)}
+.sess-item{background:var(--p2);border:1px solid var(--b2);border-radius:4px;padding:5px 6px;text-align:center}
+.sess-item.on{border-color:var(--bull);background:rgba(0,230,118,.07)}
+.sess-item.overlap{border-color:var(--gold);background:rgba(255,209,102,.07)}
+.sess-name{font-size:.52rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.sess-item.on .sess-name{color:var(--bull)}
+.sess-item.overlap .sess-name{color:var(--gold)}
+.sess-time{font-size:.5rem;color:var(--muted);margin-top:1px}
+.sess-dot{width:5px;height:5px;border-radius:50%;background:var(--b2);margin:2px auto 0}
+.sess-item.on .sess-dot{background:var(--bull);box-shadow:0 0 5px var(--bull)}
+.sess-item.overlap .sess-dot{background:var(--gold)}
+
+.hbtn{background:var(--p2);border:1px solid var(--b2);color:var(--muted);padding:4px 9px;border-radius:5px;font-size:.6rem;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.15s;white-space:nowrap}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.hbtn.on{border-color:var(--bull);color:var(--bull);background:rgba(0,230,118,.07)}
+.hbtn.export{border-color:var(--a2);color:var(--a2)}
+.hbtn.export:hover{background:rgba(157,111,255,.1)}
+
+.candle-countdown{font-size:.6rem;color:var(--muted);padding:2px 7px;border-radius:3px;background:var(--p2);border:1px solid var(--b2)}
+.candle-countdown.active{color:var(--gold);border-color:rgba(255,209,102,.3)}
+
+.db-banner{background:rgba(157,111,255,.06);border:1px solid rgba(157,111,255,.2);border-radius:4px;padding:5px 9px;font-size:.55rem;color:var(--a2);margin:6px 8px;text-align:center}
+</style>
 .ict-badge{font-size:.52rem;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.05em;display:inline-block}
 .ict-badge.bos-bull{background:rgba(0,230,118,.12);color:var(--bull);border:1px solid rgba(0,230,118,.3)}
 .ict-badge.bos-bear{background:rgba(255,54,81,.12);color:var(--bear);border:1px solid rgba(255,54,81,.3)}
@@ -152,6 +183,10 @@ svg#mc{width:100%;height:100%}
     <button class="tf" onclick="onTF('week',1,this)">1W</button>
 
     <button class="btnx" id="btnLoad" onclick="doLoad()">⚡ Cargar</button>
+    <button class="hbtn" id="btnRefresh" onclick="toggleAutoRefresh()" title="Auto-recarga al inicio de cada vela">⟳ Auto</button>
+    <button class="hbtn export" onclick="exportCSV()" title="Exportar señales del día">↓ CSV</button>
+    <button class="hbtn export" onclick="exportJSON()" title="Exportar para backtesting">↓ JSON</button>
+    <span class="candle-countdown" id="candleCountdown">--:--</span>
 
     <span class="api-tag dm" id="apiTag" style="display:none">—</span>
     <span class="live-tag" id="liveTag" style="display:none">LIVE</span>
@@ -161,6 +196,49 @@ svg#mc{width:100%;height:100%}
 
 <div class="wrap">
   <div class="sb">
+    <div class="sec">
+      <div class="stit">Sesiones (UTC)</div>
+      <div class="sess-grid">
+        <div class="sess-item" id="sessAsia">
+          <div class="sess-name">ASIA</div>
+          <div class="sess-time">00–03</div>
+          <div class="sess-dot"></div>
+        </div>
+        <div class="sess-item" id="sessLondon">
+          <div class="sess-name">LONDON</div>
+          <div class="sess-time">07–10</div>
+          <div class="sess-dot"></div>
+        </div>
+        <div class="sess-item" id="sessNY">
+          <div class="sess-name">NY</div>
+          <div class="sess-time">13–16</div>
+          <div class="sess-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stit">Gestión de Riesgo</div>
+      <div class="pcard" style="padding:8px 10px">
+        <div class="risk-row" style="margin-bottom:4px">
+          <span class="rl">Capital ($)</span>
+          <input class="risk-input" id="riskCapital" type="number" value="10000" min="100" step="100" onchange="saveConfig();calcRisk()">
+        </div>
+        <div class="risk-row" style="margin-bottom:6px">
+          <span class="rl">Riesgo (%)</span>
+          <input class="risk-input" id="riskPct" type="number" value="1" min="0.1" max="5" step="0.1" onchange="saveConfig();calcRisk()">
+        </div>
+        <div class="risk-row"><span class="rl">Riesgo $</span><span class="rv red" id="rRiskUSD">—</span></div>
+        <div class="risk-row"><span class="rl">Pips SL</span><span class="rv" id="rPipsSL">—</span></div>
+        <div class="risk-row"><span class="rl">Lotaje</span><span class="rv blu" id="rLotSize">—</span></div>
+        <div class="risk-row"><span class="rl">R/R setup</span><span class="rv grn" id="rRRSetup">—</span></div>
+        <div class="risk-row"><span class="rl">TP1 pips</span><span class="rv grn" id="rTP1pips">—</span></div>
+      </div>
+      <div class="risk-warning" id="riskWarning" style="display:none">
+        ⚠️ Riesgo diario máximo alcanzado
+      </div>
+    </div>
+
     <div class="sec">
       <div class="stit">Precio</div>
       <div class="pcard">
@@ -284,6 +362,9 @@ svg#mc{width:100%;height:100%}
     </div>
 
     <div id="ti" style="display:none">
+      <div class="db-banner">
+        🗄️ Supabase listo para conectar — configura <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code> en Vercel
+      </div>
       <div class="card">
         <div class="ctitle">Estructura</div>
         <div class="arow"><span class="al">Estructura</span><span class="av ac" id="i-struct">—</span></div>
@@ -1385,6 +1466,8 @@ function build(){
   renderChart();
   updateUI();
   updateICTPanel();
+  calcRisk();      // recalcular riesgo con el nuevo setup
+  logSignal();     // guardar señal en el log de sesión
   startLiveQuote();
 }
 
@@ -1847,11 +1930,294 @@ function updateICTPanel(){
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — localStorage (capital + % riesgo)
+// ════════════════════════════════════════════════════════════════
+function saveConfig(){
+  try{
+    localStorage.setItem('elliottict_config', JSON.stringify({
+      capital: document.getElementById('riskCapital')?.value || 10000,
+      riskPct: document.getElementById('riskPct')?.value    || 1
+    }));
+  }catch(e){}
+}
+
+function loadConfig(){
+  try{
+    const saved = localStorage.getItem('elliottict_config');
+    if(!saved) return;
+    const c = JSON.parse(saved);
+    const capEl = document.getElementById('riskCapital');
+    const pctEl = document.getElementById('riskPct');
+    if(capEl && c.capital) capEl.value = c.capital;
+    if(pctEl && c.riskPct) pctEl.value = c.riskPct;
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════════════════════════
+// GESTIÓN DE RIESGO — R/R, pips SL, lotaje
+// Usa el setup activo de S.analysis si existe
+// ════════════════════════════════════════════════════════════════
+function calcRisk(){
+  const meta    = getMeta(S.sym);
+  const capital = parseFloat(document.getElementById('riskCapital')?.value) || 10000;
+  const pct     = parseFloat(document.getElementById('riskPct')?.value)     || 1;
+  const riskUSD = +(capital * pct / 100).toFixed(2);
+
+  // Usar setup activo si existe, sino usar última vela
+  const setup   = S.analysis?.setups?.find(s => s.uiState === 'active')
+               || S.analysis?.setups?.[0]
+               || null;
+  const last    = S.data.at(-1);
+
+  if(!setup || !last){ clearRiskPanel(riskUSD); return; }
+
+  const slPips   = +(Math.abs(setup.entry - setup.sl) / meta.pip).toFixed(1);
+  const tp1pips  = +(Math.abs(setup.tp1   - setup.entry) / meta.pip).toFixed(1);
+
+  // Lotaje: riesgo$ / (pipsSL * valorPip)
+  // valorPip estándar forex = $10 por pip en lote estándar
+  const pipVal   = meta.type === 'fx' ? 10 : (meta.type === 'crypto' ? 1 : 1);
+  const lotSize  = slPips > 0 ? +(riskUSD / (slPips * pipVal)).toFixed(3) : 0;
+  const rr       = slPips > 0 ? (tp1pips / slPips).toFixed(1) : '—';
+
+  setText('rRiskUSD',  `$${riskUSD}`);
+  setText('rPipsSL',   `${slPips} pips`);
+  setText('rLotSize',  `${lotSize} lotes`);
+  setText('rRRSetup',  `1:${rr}`);
+  setText('rTP1pips',  `${tp1pips} pips`);
+
+  const warn = document.getElementById('riskWarning');
+  if(warn) warn.style.display = (pct > 2) ? 'block' : 'none';
+}
+
+function clearRiskPanel(riskUSD){
+  setText('rRiskUSD', `$${riskUSD}`);
+  ['rPipsSL','rLotSize','rRRSetup','rTP1pips'].forEach(id => setText(id,'—'));
+}
+
+function setText(id, val){
+  const el = document.getElementById(id); if(el) el.textContent = val;
+}
+
+// ════════════════════════════════════════════════════════════════
+// TRACKING DE SESIONES — actualiza cada minuto
+// ════════════════════════════════════════════════════════════════
+function updateSessions(){
+  const h = new Date().getUTCHours();
+  const m = new Date().getUTCMinutes();
+
+  const sessions = {
+    sessAsia:   { on: h >= 0  && h < 3,  overlap: false },
+    sessLondon: { on: h >= 7  && h < 10, overlap: (h >= 7 && h < 10) && (h >= 0 && h < 3) },
+    sessNY:     { on: h >= 13 && h < 16, overlap: (h >= 13 && h < 16) && (h >= 7 && h < 10) }
+  };
+
+  // London–NY overlap: 13:00–16:00 UTC (ambas activas)
+  const londonNYOverlap = h >= 13 && h < 16;
+
+  Object.entries(sessions).forEach(([id, s])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.className = 'sess-item'
+      + (id === 'sessNY' && londonNYOverlap ? ' overlap'
+        : s.on ? ' on' : '');
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// AUTO-REFRESH — recarga al inicio de cada nueva vela
+// ════════════════════════════════════════════════════════════════
+let autoRefreshTimer = null;
+let candleTimer      = null;
+
+function toggleAutoRefresh(){
+  const btn = document.getElementById('btnRefresh');
+  if(autoRefreshTimer){
+    clearTimeout(autoRefreshTimer);
+    clearInterval(candleTimer);
+    autoRefreshTimer = null; candleTimer = null;
+    if(btn){ btn.classList.remove('on'); btn.textContent = '⟳ Auto'; }
+  } else {
+    if(btn){ btn.classList.add('on'); btn.textContent = '⟳ ON'; }
+    scheduleNextCandle();
+  }
+}
+
+function scheduleNextCandle(){
+  // Calcular cuántos ms faltan para el inicio de la próxima vela
+  const now    = Date.now();
+  const tfMs   = S.tf === 'minute' ? S.mult * 60000
+               : S.tf === 'hour'   ? S.mult * 3600000
+               : S.tf === 'day'    ? 86400000
+               : 604800000;
+  const msUntil = tfMs - (now % tfMs);
+
+  startCandleCountdown(msUntil);
+
+  autoRefreshTimer = setTimeout(()=>{
+    if(S.data.length) doLoad();            // recarga al inicio de la vela
+    scheduleNextCandle();                   // programar la siguiente
+  }, msUntil);
+}
+
+function startCandleCountdown(msTotal){
+  if(candleTimer) clearInterval(candleTimer);
+  let remaining = msTotal;
+
+  const el = document.getElementById('candleCountdown');
+  const tick = ()=>{
+    if(!el) return;
+    remaining -= 1000;
+    if(remaining <= 0){ el.textContent = '⟳'; return; }
+    const m = String(Math.floor(remaining/60000)).padStart(2,'0');
+    const s = String(Math.floor((remaining%60000)/1000)).padStart(2,'0');
+    el.textContent = `${m}:${s}`;
+    el.className = 'candle-countdown active';
+  };
+  tick();
+  candleTimer = setInterval(tick, 1000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// EXPORTAR REPORTES — CSV y JSON
+// Acumula todas las señales de la sesión en S.signalLog[]
+// ════════════════════════════════════════════════════════════════
+function logSignal(){
+  if(!S.analysis?.setups?.length) return;
+  const meta  = getMeta(S.sym);
+  const setup = S.analysis.setups[0];
+  if(!setup) return;
+
+  const entry = {
+    ts:          new Date().toISOString(),
+    symbol:      meta.label,
+    timeframe:   tfLabel(),
+    source:      S.source,
+    type:        setup.type,
+    setupType:   setup.setupType,
+    score:       setup.score,
+    uiState:     setup.uiState,
+    entry:       setup.entry,
+    sl:          setup.sl,
+    tp1:         setup.tp1,
+    tp2:         setup.tp2,
+    tp3:         setup.tp3,
+    rr:          setup.rr,
+    session:     setup.metadata?.sessionName || '—',
+    wave:        setup.waveLabel || '—',
+    chochConf:   setup.metadata?.chochConfirmed ? 'sí' : 'no',
+    fvgState:    setup.fvgQual?.state || '—',
+    breakdown:   setup.breakdown ? Object.values(setup.breakdown).join(' | ') : '—'
+  };
+
+  if(!S.signalLog) S.signalLog = [];
+  // Evitar duplicados del mismo setup
+  if(!S.signalLog.find(s => s.ts === entry.ts && s.entry === entry.entry)){
+    S.signalLog.push(entry);
+  }
+}
+
+function exportCSV(){
+  if(!S.signalLog?.length){
+    alert('No hay señales registradas aún. Carga un instrumento primero.'); return;
+  }
+  const keys = Object.keys(S.signalLog[0]);
+  const rows = [keys.join(','),
+    ...S.signalLog.map(r => keys.map(k => `"${String(r[k]).replace(/"/g,'""')}"`).join(','))
+  ];
+  downloadFile(rows.join('\n'), `elliottict-signals-${dateTag()}.csv`, 'text/csv');
+}
+
+function exportJSON(){
+  if(!S.signalLog?.length){
+    alert('No hay señales registradas aún. Carga un instrumento primero.'); return;
+  }
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    appVersion: 'ElliottICT Pro 2',
+    signals:    S.signalLog
+  };
+  downloadFile(JSON.stringify(payload, null, 2),
+    `elliottict-backtesting-${dateTag()}.json`, 'application/json');
+}
+
+function downloadFile(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 500);
+}
+
+function dateTag(){
+  return new Date().toISOString().slice(0,10);
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUPABASE STUB — estructura lista para conectar
+// Para activar: agrega SUPABASE_URL y SUPABASE_ANON_KEY en Vercel
+// El backend /api/db.js hará el INSERT usando @supabase/supabase-js
+// ════════════════════════════════════════════════════════════════
+async function saveSignalToDB(signal){
+  // Esta función estará activa cuando conectes Supabase
+  // Estructura de tabla sugerida:
+  //   CREATE TABLE signals (
+  //     id          BIGSERIAL PRIMARY KEY,
+  //     ts          TIMESTAMPTZ,
+  //     symbol      TEXT,
+  //     timeframe   TEXT,
+  //     type        TEXT,
+  //     setup_type  TEXT,
+  //     score       INTEGER,
+  //     entry       NUMERIC,
+  //     sl          NUMERIC,
+  //     tp1         NUMERIC,
+  //     tp2         NUMERIC,
+  //     tp3         NUMERIC,
+  //     rr          TEXT,
+  //     session     TEXT,
+  //     wave        TEXT,
+  //     breakdown   TEXT
+  //   );
+  try{
+    const r = await fetch('/api/db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(signal)
+    });
+    if(!r.ok) console.warn('Supabase: no conectado aún');
+  }catch(e){
+    // Silencioso hasta que se configure Supabase
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// BADGES EN TIEMPO REAL — header + chart overlay
+// ════════════════════════════════════════════════════════════════
+function updateRealtimeBadges(){
+  // Header: sesión activa
+  const h = new Date().getUTCHours();
+  const session = h>=13&&h<16 ? 'NY 🟢' : h>=7&&h<10 ? 'London 🟢' : h>=0&&h<3 ? 'Asia 🟡' : 'Off ⚪';
+  const pillTxt = document.getElementById('pillTxt');
+  if(pillTxt && S.data.length){
+    const setup = S.analysis?.setups?.[0];
+    if(setup?.uiState === 'active'){
+      document.getElementById('pill').className = 'pill ok';
+      pillTxt.textContent = `${session} · Score ${setup.score}/100`;
+    }
+  }
+}
+
 (function init(){
-  document.getElementById('symSel').value=S.sym;
+  document.getElementById('symSel').value = S.sym;
   setPill('demo','Listo');
   setTag(null,null);
   hideLdr();
+  loadConfig();
+  updateSessions();
+  setInterval(updateSessions, 60000);
+  setInterval(updateRealtimeBadges, 5000);
 })();
 </script>
 </body>
