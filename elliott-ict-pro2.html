@@ -126,7 +126,7 @@ svg#mc{width:100%;height:100%}
 .candle-countdown.active{color:var(--gold);border-color:rgba(255,209,102,.3)}
 
 .db-banner{background:rgba(157,111,255,.06);border:1px solid rgba(157,111,255,.2);border-radius:4px;padding:5px 9px;font-size:.55rem;color:var(--a2);margin:6px 8px;text-align:center}
-</style>
+
 .ict-badge{font-size:.52rem;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.05em;display:inline-block}
 .ict-badge.bos-bull{background:rgba(0,230,118,.12);color:var(--bull);border:1px solid rgba(0,230,118,.3)}
 .ict-badge.bos-bear{background:rgba(255,54,81,.12);color:var(--bear);border:1px solid rgba(255,54,81,.3)}
@@ -141,6 +141,16 @@ svg#mc{width:100%;height:100%}
 .setup-card.wait{background:var(--p2);border:1px solid var(--b2)}
 .exp-bar{height:3px;border-radius:2px;background:var(--b2);margin-top:6px;overflow:hidden}
 .exp-fill{height:100%;border-radius:2px;background:var(--bull);transition:width .3s}
+
+/* ── TIPO DE ORDEN ───────────────────────────── */
+.order-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;font-size:.65rem;font-weight:700;letter-spacing:.05em;width:100%;justify-content:center;margin:4px 0 2px}
+.order-badge.market-buy {background:rgba(0,230,118,.13);color:var(--bull);border:1px solid rgba(0,230,118,.35)}
+.order-badge.market-sell{background:rgba(255,54,81,.13); color:var(--bear);border:1px solid rgba(255,54,81,.35)}
+.order-badge.limit-buy  {background:rgba(0,207,255,.1);  color:var(--accent);border:1px solid rgba(0,207,255,.3)}
+.order-badge.limit-sell {background:rgba(157,111,255,.1);color:var(--a2);   border:1px solid rgba(157,111,255,.3)}
+.order-badge.stop-buy   {background:rgba(255,149,0,.1);  color:#ff9500;     border:1px solid rgba(255,149,0,.3)}
+.order-badge.stop-sell  {background:rgba(255,209,102,.1);color:var(--gold); border:1px solid rgba(255,209,102,.3)}
+.order-rationale{font-size:.54rem;color:var(--muted);line-height:1.55;padding:5px 7px;background:var(--p2);border-radius:3px;border-left:2px solid var(--b2)}
 </style>
 </head>
 
@@ -382,7 +392,14 @@ svg#mc{width:100%;height:100%}
       <div class="card">
         <div class="ctitle">Setup Institucional</div>
         <div style="text-align:center;margin:7px 0"><span class="sig wait" id="i-sig">⏳ SIN SETUP</span></div>
-        <div class="arow"><span class="al">Tipo</span><span class="av ac" id="i-type">—</span></div>
+
+        <!-- TIPO DE ORDEN -->
+        <div style="padding:0 4px;margin-bottom:4px">
+          <span class="order-badge" id="i-order-badge">—</span>
+          <div class="order-rationale" id="i-order-rationale">Sin datos suficientes para determinar el tipo de orden.</div>
+        </div>
+
+        <div class="arow"><span class="al">Tipo Setup</span><span class="av ac" id="i-type">—</span></div>
         <div class="arow"><span class="al">Entry</span><span class="av ac" id="i-en">—</span></div>
         <div class="arow"><span class="al">Stop Loss</span><span class="av bear" id="i-sl">—</span></div>
         <div class="arow"><span class="al">TP1</span><span class="av bull" id="i-t1">—</span></div>
@@ -1763,6 +1780,81 @@ function updateUI(){
 }
 
 // ---- ICT Panel Update ----
+// ════════════════════════════════════════════════════════════════
+// CLASIFICACIÓN DE TIPO DE ORDEN
+// Lógica ICT: la posición del precio respecto a entry/POI determina
+// si la orden es de mercado, límite o stop.
+//
+//  BUY  MARKET : precio actual ≈ entry (dentro del POI activo)
+//  BUY  LIMIT  : precio actual > entry (precio aún debe BAJAR a la zona)
+//  BUY  STOP   : precio actual < entry (precio debe SUBIR y romper para confirmar)
+//  SELL MARKET : simétrico
+//  SELL LIMIT  : precio actual < entry (precio debe SUBIR a la zona)
+//  SELL STOP   : precio actual > entry (precio debe BAJAR y romper)
+// ════════════════════════════════════════════════════════════════
+function classifyOrderType(setup, currentPrice, atr){
+  if(!setup || !currentPrice) return null;
+
+  const isBull   = setup.type === 'buy';
+  const entry    = setup.entry;
+  const tol      = atr * 0.15;          // tolerancia = 15% del ATR (~en zona)
+
+  const dist     = currentPrice - entry; // + precio por encima de entry
+  const inZone   = Math.abs(dist) <= tol;
+
+  let orderType, cls, icon, rationale;
+
+  if(isBull){
+    if(inZone){
+      orderType = 'BUY MARKET';
+      cls       = 'market-buy';
+      icon      = '🟢';
+      rationale = `Precio dentro del POI (±${(tol).toFixed(getMeta(S.sym).prec)} tolerancia). Entrar a mercado ahora con orden Buy Market.`;
+    } else if(dist > tol){
+      // precio ARRIBA de entry → necesita bajar al POI
+      orderType = 'BUY LIMIT';
+      cls       = 'limit-buy';
+      icon      = '🔵';
+      rationale = `Precio (${currentPrice.toFixed(getMeta(S.sym).prec)}) está ${dist.toFixed(getMeta(S.sym).prec)} por encima de la entry. Colocar Buy Limit en ${entry.toFixed(getMeta(S.sym).prec)} esperando pullback al POI.`;
+    } else {
+      // precio ABAJO de entry → necesita subir y romper para confirmar momentum
+      orderType = 'BUY STOP';
+      cls       = 'stop-buy';
+      icon      = '🟠';
+      rationale = `Precio (${currentPrice.toFixed(getMeta(S.sym).prec)}) aún no alcanzó la entry. Colocar Buy Stop en ${entry.toFixed(getMeta(S.sym).prec)} para entrar solo si el momentum confirma la ruptura.`;
+    }
+  } else {
+    if(inZone){
+      orderType = 'SELL MARKET';
+      cls       = 'market-sell';
+      icon      = '🔴';
+      rationale = `Precio dentro del POI bajista. Entrar a mercado ahora con orden Sell Market.`;
+    } else if(dist < -tol){
+      // precio ABAJO de entry → necesita subir al POI
+      orderType = 'SELL LIMIT';
+      cls       = 'limit-sell';
+      icon      = '🟣';
+      rationale = `Precio (${currentPrice.toFixed(getMeta(S.sym).prec)}) está ${Math.abs(dist).toFixed(getMeta(S.sym).prec)} por debajo de la entry bajista. Colocar Sell Limit en ${entry.toFixed(getMeta(S.sym).prec)} esperando pullback al POI.`;
+    } else {
+      // precio ARRIBA de entry → necesita bajar y romper
+      orderType = 'SELL STOP';
+      cls       = 'stop-sell';
+      icon      = '🟡';
+      rationale = `Precio por encima de la entry. Colocar Sell Stop en ${entry.toFixed(getMeta(S.sym).prec)} para confirmar ruptura bajista antes de entrar.`;
+    }
+  }
+
+  // Agregar contexto del setup type
+  const ctxMap = {
+    impulso:   ' | Setup IMPULSO — seguir tendencia.',
+    reversion: ' | Setup REVERSIÓN — buscar agotamiento.',
+    pullback:  ' | Setup PULLBACK — retroceso en tendencia.',
+  };
+  rationale += ctxMap[setup.setupType] || '';
+
+  return { orderType, cls, icon, rationale };
+}
+
 // ---- ICT Panel Update (5 estados visuales) ----
 function updateICTPanel(){
   const meta = getMeta(S.sym);
@@ -1835,11 +1927,26 @@ function updateICTPanel(){
     });
     if(stateEl) stateEl.textContent='—';
     if(expBar)  expBar.style.width='0%';
-    // Limpiar breakdown
     const bd = document.getElementById('i-breakdown');
     if(bd) bd.innerHTML = '';
+    const ob = document.getElementById('i-order-badge');
+    const or = document.getElementById('i-order-rationale');
+    if(ob){ ob.textContent='—'; ob.className='order-badge'; }
+    if(or) or.textContent='Sin datos suficientes para determinar el tipo de orden.';
     return;
   }
+
+  // ── Tipo de Orden (Buy/Sell Market / Limit / Stop) ──
+  const currentPx = S.data.at(-1)?.c || 0;
+  const atrLocal  = S.data.slice(-14).reduce((s,d)=>s+(d.h-d.l),0)/14;
+  const orderInfo = classifyOrderType(setup, currentPx, atrLocal);
+  const obEl = document.getElementById('i-order-badge');
+  const orEl = document.getElementById('i-order-rationale');
+  if(obEl && orderInfo){
+    obEl.textContent = `${orderInfo.icon} ${orderInfo.orderType}`;
+    obEl.className   = `order-badge ${orderInfo.cls}`;
+  }
+  if(orEl && orderInfo) orEl.textContent = orderInfo.rationale;
 
   // ── Etiqueta de tipo: IMPULSO vs REVERSIÓN ──
   const typeEl = document.getElementById('i-type');
