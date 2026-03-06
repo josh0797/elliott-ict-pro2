@@ -1359,25 +1359,52 @@ function buildSetup(data, swings, sweeps, bosList, chochs, waves, zones){
       ? +((poi.top + poi.bottom) / 2).toFixed(meta.prec)
       : last.c;
 
-    // Stop
+    // ── Stop Loss ────────────────────────────────────────────────
+    // BUY:  SL debe estar DEBAJO del entry → swept level mínimo - buffer
+    // SELL: SL debe estar ARRIBA del entry → swept level máximo + buffer
+    // El swept level puede ser tanto un High (swept para BUY) como un Low (swept para SELL).
+    // Para garantizar dirección correcta usamos MAX/MIN explícitos.
+    const slRaw = isBull
+      ? sweep.sweptLevel - atr * 0.5   // debajo del mínimo barrido
+      : sweep.sweptLevel + atr * 0.5;  // arriba del máximo barrido
+
+    // Forzar que el SL esté en la dirección correcta respecto a entry
     const sl = isBull
-      ? +(sweep.sweptLevel - atr * 0.5).toFixed(meta.prec)
-      : +(sweep.sweptLevel + atr * 0.5).toFixed(meta.prec);
+      ? +Math.min(slRaw, entry - atr * 0.3).toFixed(meta.prec)  // siempre < entry
+      : +Math.max(slRaw, entry + atr * 0.3).toFixed(meta.prec); // siempre > entry
 
     const risk = Math.abs(entry - sl);
     if(risk === 0) continue;
 
-    // TPs
+    // ── Take Profits ─────────────────────────────────────────────
+    // dir: +1 para BUY (TPs suben), -1 para SELL (TPs bajan)
+    const dir = isBull ? 1 : -1;
+
+    // TP1: siguiente swing major en la dirección del trade
+    // Solo usarlo si está en la dirección correcta, sino Fibonacci
     const nextMajor = isBull
       ? swings.filter(s => s.type==='H' && s.strength==='major' && s.idx > choch.idx).at(0)
       : swings.filter(s => s.type==='L' && s.strength==='major' && s.idx > choch.idx).at(0);
 
-    const tp1 = nextMajor
+    const nextMajorValid = nextMajor && (
+      isBull  ? nextMajor.price > entry   // para BUY el swing H debe ser más alto
+              : nextMajor.price < entry   // para SELL el swing L debe ser más bajo
+    );
+
+    const tp1raw = nextMajorValid
       ? +nextMajor.price.toFixed(meta.prec)
-      : +(entry + (isBull?1:-1) * risk * 1.272).toFixed(meta.prec);
-    const tp2 = +(entry + (isBull?1:-1) * risk * 1.618).toFixed(meta.prec);
-    const tp3 = +(entry + (isBull?1:-1) * risk * 2.618).toFixed(meta.prec);
-    const rr  = (Math.abs(tp1 - entry) / risk).toFixed(1);
+      : +(entry + dir * risk * 1.272).toFixed(meta.prec);
+
+    const tp2raw = +(entry + dir * risk * 1.618).toFixed(meta.prec);
+    const tp3raw = +(entry + dir * risk * 2.618).toFixed(meta.prec);
+
+    // Ordenar TPs: para BUY deben subir, para SELL deben bajar
+    const tpsSorted = isBull
+      ? [tp1raw, tp2raw, tp3raw].sort((a,b) => a - b)   // ascendente
+      : [tp1raw, tp2raw, tp3raw].sort((a,b) => b - a);  // descendente
+
+    const [tp1, tp2, tp3] = tpsSorted;
+    const rr = (Math.abs(tp1 - entry) / risk).toFixed(1);
 
     // Score ponderado 0-100
     const waveLabel = waves.at(-1)?.label || null;
