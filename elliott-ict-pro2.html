@@ -194,6 +194,40 @@ svg#mc{width:100%;height:100%}
 .ml-btn{width:100%;margin-top:6px;padding:5px;background:rgba(157,111,255,.1);border:1px solid rgba(157,111,255,.25);color:var(--a2);border-radius:4px;font-size:.58rem;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:.15s}
 .ml-btn:hover{background:rgba(157,111,255,.2)}.ml-btn:disabled{opacity:.4;cursor:not-allowed}
 .ml-status{font-size:.5rem;color:var(--muted);text-align:center;margin-top:3px}
+
+/* ── MODELO CANÓNICO v2 (Shadow Mode) ───────── */
+.v2-card{margin:6px 8px;padding:9px 11px;background:var(--p2);border-radius:6px;border:1px dashed rgba(157,111,255,.45);position:relative}
+.v2-card::before{content:'EXPERIMENTAL';position:absolute;top:-7px;right:8px;background:var(--panel);padding:0 6px;font-size:.46rem;font-weight:800;letter-spacing:.1em;color:var(--a2)}
+.v2-title{font-size:.55rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.v2-state-badge{font-size:.46rem;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.04em}
+.v2-state-badge.shadow {background:rgba(157,111,255,.13);color:var(--a2);border:1px solid rgba(157,111,255,.3)}
+.v2-state-badge.unavail{background:rgba(255,54,81,.1);color:var(--bear);border:1px solid rgba(255,54,81,.3)}
+.v2-state-badge.incomp {background:rgba(255,209,102,.1);color:var(--gold);border:1px solid rgba(255,209,102,.3)}
+.v2-state-badge.mismatch{background:rgba(255,54,81,.1);color:var(--bear);border:1px solid rgba(255,54,81,.3)}
+
+.v2-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.v2-model-block{background:var(--panel);border-radius:5px;padding:6px 8px}
+.v2-model-block .vmb-name{font-size:.48rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.v2-model-block .vmb-state{font-size:.45rem;margin-top:1px}
+.v2-model-block .vmb-state.active {color:var(--bull)}
+.v2-model-block .vmb-state.shadow {color:var(--a2)}
+.v2-model-block .vmb-state.error  {color:var(--bear)}
+.v2-model-block .vmb-prob{font-size:1.25rem;font-weight:800;line-height:1;margin-top:4px}
+.v2-model-block.legacy .vmb-prob{color:var(--bull)}
+.v2-model-block.canonical .vmb-prob{color:var(--a2)}
+.v2-model-block .vmb-err{font-size:.55rem;font-family:'JetBrains Mono',monospace;color:var(--bear);margin-top:4px;line-height:1.3}
+
+.v2-features{margin-top:6px;padding-top:5px;border-top:1px solid var(--b2)}
+.v2-feat-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;font-size:.51rem;padding:1px 0}
+.v2-feat-row .vfk{color:var(--muted)}
+.v2-feat-row .vfv{font-weight:700;color:var(--text)}
+.v2-feat-row .vfs{font-size:.44rem;padding:0 4px;border-radius:2px;text-align:center;min-width:32px}
+.v2-feat-row .vfs.ok    {background:rgba(0,230,118,.1);color:var(--bull)}
+.v2-feat-row .vfs.null  {background:rgba(255,209,102,.1);color:var(--gold)}
+.v2-feat-row .vfs.fail  {background:rgba(255,54,81,.1);color:var(--bear)}
+
+.v2-meta{margin-top:5px;font-size:.45rem;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.4;word-break:break-all}
+.v2-disclaimer{margin-top:5px;font-size:.46rem;color:var(--muted);background:rgba(157,111,255,.05);padding:4px 6px;border-radius:3px;border-left:2px solid var(--a2);line-height:1.4}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -694,6 +728,79 @@ svg#mc{width:100%;height:100%}
       <button class="ml-btn" id="ml-train-btn" onclick="mlTrain()">⚡ Entrenar con histórico actual</button>
       <button class="ml-btn" id="ml-predict-btn" onclick="mlPredict()" disabled style="margin-top:3px;border-color:rgba(0,230,118,.25);color:var(--bull)">🎯 Predecir setup actual</button>
       <div class="ml-status" id="ml-status">Carga un instrumento y entrena el modelo</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- MODELO CANÓNICO v2 — SHADOW MODE                   -->
+    <!-- No modifica señal final · Solo predicción paralela  -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="v2-card">
+      <div class="v2-title">
+        <span>🧪 canonical-ict-v2</span>
+        <span class="v2-state-badge shadow" id="v2-state-badge">SHADOW · EXPERIMENTAL</span>
+      </div>
+
+      <!-- Comparativa Legacy vs Canónico -->
+      <div class="v2-row">
+        <div class="v2-model-block legacy">
+          <div class="vmb-name">Modelo legacy</div>
+          <div class="vmb-state active" id="v2-legacy-state">ACTIVE</div>
+          <div class="vmb-prob" id="v2-legacy-prob">—</div>
+        </div>
+        <div class="v2-model-block canonical">
+          <div class="vmb-name">Canónico v2</div>
+          <div class="vmb-state shadow" id="v2-canonical-state">SHADOW</div>
+          <div class="vmb-prob" id="v2-canonical-prob">—</div>
+        </div>
+      </div>
+
+      <!-- Mensaje de error / estado real si no puede predecir -->
+      <div class="vmb-err" id="v2-error-msg" style="display:none"></div>
+
+      <!-- Features canónicas y su estado -->
+      <div class="v2-features" id="v2-features-list" style="display:none">
+        <div class="v2-feat-row">
+          <span class="vfk">fvgSize</span>
+          <span class="vfv" id="v2f-fvgSize">—</span>
+          <span class="vfs" id="v2s-fvgSize">—</span>
+        </div>
+        <div class="v2-feat-row">
+          <span class="vfk">atrNorm</span>
+          <span class="vfv" id="v2f-atrNorm">—</span>
+          <span class="vfs" id="v2s-atrNorm">—</span>
+        </div>
+        <div class="v2-feat-row">
+          <span class="vfk">isKillzone</span>
+          <span class="vfv" id="v2f-isKillzone">—</span>
+          <span class="vfs" id="v2s-isKillzone">—</span>
+        </div>
+        <div class="v2-feat-row">
+          <span class="vfk">score</span>
+          <span class="vfv" id="v2f-score">—</span>
+          <span class="vfs" id="v2s-score">—</span>
+        </div>
+        <div class="v2-feat-row">
+          <span class="vfk">distOB</span>
+          <span class="vfv" id="v2f-distOB">—</span>
+          <span class="vfs" id="v2s-distOB">—</span>
+        </div>
+        <div class="v2-feat-row">
+          <span class="vfk">waveLabel</span>
+          <span class="vfv" id="v2f-waveLabel">—</span>
+          <span class="vfs" id="v2s-waveLabel">—</span>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="v2-disclaimer">
+        Esta predicción es solo de auditoría. No modifica la señal final, ni alertas, ni el tipo de orden, ni TP/SL.
+      </div>
+
+      <!-- Metadata para reproducibilidad -->
+      <div class="v2-meta" id="v2-meta">
+        <span id="v2-meta-schema">schema: canonical-ict-v2</span><br>
+        <span id="v2-meta-snapshot">snapshot: —</span>
+      </div>
     </div>
 
     <!-- Configuración de Alertas -->
@@ -3113,6 +3220,512 @@ const MTF = {
 //  Features (6): fvgSize, atrNorm, isKillzone, ictScore, distOB, waveCode
 //  Target: probabilidad de que TP1 se alcance antes que SL
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  canonical-ict-v2 — MODELO SHADOW
+//  ─────────────────────────────────────────────────────────────
+//  Contrato:
+//    Target: P(TP1 alcanzado antes que SL | orden activada)
+//    Features canónicas (no proxy):
+//      fvgSize, atrNorm, isKillzone, score, distOB, waveLabel(one-hot)
+//    Estados públicos:
+//      READY | FEATURES_INCOMPLETE | MODEL_UNAVAILABLE | SCHEMA_MISMATCH
+//    Política: nunca modifica la señal, alertas, score, entry, SL ni TP.
+// ════════════════════════════════════════════════════════════════
+
+const CanonicalV2 = {
+  SCHEMA_VERSION: 'canonical-ict-v2',
+  MODEL_VERSION:  'canonical-ict-v2-untrained-shadow-2026-06',
+
+  // Categorías canónicas de waveLabel (orden fijo para one-hot)
+  WAVE_CATEGORIES: [
+    'WAVE_1','WAVE_2','WAVE_3','WAVE_4','WAVE_5',
+    'WAVE_A','WAVE_B','WAVE_C','UNKNOWN'
+  ],
+
+  // Modelo neural cargado (null hasta que haya pesos entrenados)
+  model:    null,
+  minNorm:  null,
+  maxNorm:  null,
+  trainedAt:null,
+
+  // ── ATR True Range con Wilder RMA (14) ──────────────────────
+  // Devuelve el ATR en la posición `endIdx` (inclusiva). Requiere ≥15 velas.
+  atr14Wilder(data, endIdx){
+    if(endIdx < 14) return null;
+    // TR para velas 1..endIdx
+    const trs = [];
+    for(let i = Math.max(1, endIdx - 14); i <= endIdx; i++){
+      const tr = Math.max(
+        data[i].h - data[i].l,
+        Math.abs(data[i].h - data[i-1].c),
+        Math.abs(data[i].l - data[i-1].c)
+      );
+      trs.push(tr);
+    }
+    // RMA Wilder: primer valor = media simple de los 14 TR iniciales
+    if(trs.length < 14) return null;
+    let atr = trs.slice(0, 14).reduce((a,b)=>a+b, 0) / 14;
+    for(let i = 14; i < trs.length; i++){
+      atr = (atr * 13 + trs[i]) / 14;
+    }
+    return atr;
+  },
+
+  // ── Killzone con zona horaria IANA (London + Nueva York) ────
+  // Devuelve {value: 0|1|null, known: bool, reason: string}
+  // London KZ: 07:00-10:00 hora Londres (Europe/London)
+  // NY KZ:    08:00-11:00 hora NY     (America/New_York)
+  detectKillzone(timestamp){
+    if(!timestamp){
+      return {value: null, known: false, reason: 'no_timestamp'};
+    }
+    const date = new Date(timestamp);
+    if(isNaN(date.getTime())){
+      return {value: null, known: false, reason: 'invalid_timestamp'};
+    }
+
+    let inLondonKZ = false, inNyKZ = false;
+    try{
+      // Hora actual en Europe/London (Intl maneja DST automáticamente)
+      const londonHour = parseInt(date.toLocaleString('en-US', {
+        timeZone: 'Europe/London', hour: '2-digit', hour12: false
+      }).split(':')[0] || '99', 10);
+      const nyHour = parseInt(date.toLocaleString('en-US', {
+        timeZone: 'America/New_York', hour: '2-digit', hour12: false
+      }).split(':')[0] || '99', 10);
+
+      inLondonKZ = (londonHour >= 7 && londonHour < 10);
+      inNyKZ     = (nyHour >= 8 && nyHour < 11);
+    }catch(e){
+      return {value: null, known: false, reason: 'timezone_error'};
+    }
+
+    return {
+      value: (inLondonKZ || inNyKZ) ? 1 : 0,
+      known: true,
+      reason: inLondonKZ ? 'london_kz' : (inNyKZ ? 'ny_kz' : 'outside_kz')
+    };
+  },
+
+  // ── Categorizar waveLabel a categoría canónica ──────────────
+  categorizeWave(label){
+    if(!label) return 'UNKNOWN';
+    const s = String(label).toUpperCase().trim();
+    // Detectar Elliott impulsive: 1,2,3,4,5 con paréntesis o sin
+    const numMatch = s.match(/^[\(\[\{]*([1-5])[\)\]\}]*$/) || s.match(/(?:WAVE[_\s]*)?([1-5])/);
+    if(numMatch) return `WAVE_${numMatch[1]}`;
+    // Detectar correctivos: A, B, C
+    const letterMatch = s.match(/^[\(\[\{]*([ABC])[\)\]\}]*$/) || s.match(/(?:WAVE[_\s]*)?([ABC])/);
+    if(letterMatch) return `WAVE_${letterMatch[1]}`;
+    // Romanos i,ii,iii,iv,v → reducimos a su número de orden
+    const romanMap = {'I':'1','II':'2','III':'3','IV':'4','V':'5'};
+    const romanMatch = s.match(/^[\(\[\{]*(I{1,3}|IV|V)[\)\]\}]*$/);
+    if(romanMatch && romanMap[romanMatch[1]]) return `WAVE_${romanMap[romanMatch[1]]}`;
+    return 'UNKNOWN';
+  },
+
+  // ── Distancia canónica precio→zona OB ──
+  distanceToZone(price, zone){
+    if(!zone) return null;
+    const top = Math.max(zone.top, zone.bottom);
+    const bot = Math.min(zone.top, zone.bottom);
+    if(price >= bot && price <= top) return 0;
+    if(price < bot) return bot - price;
+    return price - top;
+  },
+
+  // ── Selección de FVG válido alineado al setup ──
+  // Reglas del contrato:
+  //   - Dirección alineada con el setup
+  //   - Estado activo (untested o partial — NO filled, NO invalidated)
+  //   - Existir antes o en momento de la señal
+  selectFVG(setup, zones, signalBarIdx){
+    if(!zones?.fvgs?.length) return null;
+    const isBull = setup.type === 'buy';
+    const dirNeeded = isBull ? 'bull' : 'bear';
+
+    // Filtrar FVGs candidatos
+    const candidates = zones.fvgs.filter(fvg => {
+      if(fvg.type !== dirNeeded) return false;
+      // No futuros: la vela donde se creó el FVG ≤ signalBarIdx
+      if(typeof fvg.barR === 'number' && fvg.barR > signalBarIdx) return false;
+      // Estados aceptables: untested, partial. NUNCA filled.
+      // Si el campo state no existe, lo consideramos no determinable y descartamos.
+      const st = (fvg.state || '').toLowerCase();
+      if(st === 'filled' || st === 'invalidated') return false;
+      if(st === '') return false; // estado desconocido → no usar
+      return true;
+    });
+
+    if(!candidates.length) return null;
+
+    // Selección: el FVG más cercano al entry, ya que ese es el más relevante
+    let best = null, bestDist = Infinity;
+    for(const fvg of candidates){
+      const center = (fvg.top + fvg.bottom) / 2;
+      const d = Math.abs(center - setup.entry);
+      if(d < bestDist){ bestDist = d; best = fvg; }
+    }
+    return best;
+  },
+
+  // ── Selección de OB válido alineado al setup ──
+  selectOB(setup, zones, signalBarIdx){
+    if(!zones?.obs?.length) return null;
+    const dirNeeded = setup.type === 'buy' ? 'bull' : 'bear';
+
+    const candidates = zones.obs.filter(ob => {
+      if(ob.type !== dirNeeded) return false;
+      if(typeof ob.barIdx === 'number' && ob.barIdx > signalBarIdx) return false;
+      // No invalidado, no mitigado completamente
+      const st = (ob.state || '').toLowerCase();
+      if(st === 'invalidated' || st === 'mitigated') return false;
+      // Si el HTML no expone el state, asumimos vigente si está en zones.obs
+      // (las zonas se purgan al mitigarse en el motor canónico)
+      return true;
+    });
+    if(!candidates.length) return null;
+
+    // El OB más cercano al entry
+    let best = null, bestDist = Infinity;
+    for(const ob of candidates){
+      const d = this.distanceToZone(setup.entry, ob);
+      if(d !== null && d < bestDist){ bestDist = d; best = ob; }
+    }
+    return best;
+  },
+
+  // ── Extractor de features canónicas ─────────────────────────
+  // Devuelve { features, featureStatus, snapshot, error? }
+  // featureStatus refleja qué pudo o no calcularse honestamente.
+  extractCanonicalFeatures(setup, data, zones){
+    const errors = [];
+    const snapshot = {
+      schemaVersion:   this.SCHEMA_VERSION,
+      featureSnapshotId: this.generateSnapshotId(),
+      extractedAt:     new Date().toISOString(),
+      raw:             {},
+      status:          {},
+      featureStatus:   'READY'
+    };
+
+    // El índice de la vela donde se emite la señal (última cerrada)
+    const signalBarIdx = (data?.length || 1) - 1;
+    if(signalBarIdx < 14){
+      snapshot.featureStatus = 'INSUFFICIENT_HISTORY';
+      snapshot.raw.reason = `Solo ${signalBarIdx+1} velas; se requieren ≥15 para ATR14 Wilder`;
+      return {features: null, featureStatus: snapshot.featureStatus, snapshot, error: snapshot.raw.reason};
+    }
+
+    const closeAtSignal = data[signalBarIdx].c;
+    const atr14         = this.atr14Wilder(data, signalBarIdx);
+
+    if(atr14 === null || !isFinite(atr14) || atr14 <= 0){
+      snapshot.featureStatus = 'INSUFFICIENT_HISTORY';
+      snapshot.raw.reason = 'ATR14 no calculable';
+      return {features: null, featureStatus: snapshot.featureStatus, snapshot, error: snapshot.raw.reason};
+    }
+
+    snapshot.raw.closeAtSignal = closeAtSignal;
+    snapshot.raw.atr14Wilder   = atr14;
+    snapshot.raw.signalBarIdx  = signalBarIdx;
+    snapshot.raw.signalBarTime = data[signalBarIdx].t;
+
+    // ── Feature 1: fvgSize ──
+    const fvg = this.selectFVG(setup, zones, signalBarIdx);
+    let fvgSize = 0, fvgPresent = 0;
+    if(fvg){
+      const rawFvgSize = Math.abs(fvg.top - fvg.bottom);
+      fvgSize    = rawFvgSize / atr14;
+      fvgPresent = 1;
+      snapshot.raw.fvg = {top: fvg.top, bottom: fvg.bottom, type: fvg.type, state: fvg.state, barR: fvg.barR};
+      snapshot.status.fvgSize = 'OK';
+    } else {
+      snapshot.raw.fvg = null;
+      snapshot.status.fvgSize = 'ABSENT_VALID';   // ausencia válida, no error
+    }
+
+    // ── Feature 2: atrNorm ──
+    const atrNorm = atr14 / closeAtSignal;
+    snapshot.status.atrNorm = 'OK';
+
+    // ── Feature 3: isKillzone (IANA) ──
+    const kz = this.detectKillzone(data[signalBarIdx].t);
+    snapshot.raw.killzone     = kz;
+    snapshot.raw.killzoneKnown = kz.known;
+    if(!kz.known){
+      errors.push('killzone_unknown');
+      snapshot.status.isKillzone = 'NULL_UNKNOWN';
+    } else {
+      snapshot.status.isKillzone = 'OK';
+    }
+
+    // ── Feature 4: score canónico ──
+    // El score canónico de tu motor está en setup.score (0..100 según buildSetup actual)
+    // Validamos que NO contenga señales futuras (el motor ya cumple esto en buildSetup,
+    // pero registramos el desglose para auditoría).
+    let scoreNorm = null;
+    if(typeof setup.score === 'number' && isFinite(setup.score)){
+      // Tu motor produce 0..100 → normalizamos a 0..1
+      scoreNorm = Math.max(0, Math.min(100, setup.score)) / 100;
+      snapshot.raw.scoreRaw      = setup.score;
+      snapshot.raw.scoreBreakdown= setup.breakdown || null;
+      snapshot.status.score = 'OK';
+    } else {
+      errors.push('score_missing');
+      snapshot.status.score = 'MISSING';
+    }
+
+    // ── Feature 5: distOB ──
+    const ob = this.selectOB(setup, zones, signalBarIdx);
+    let distOB = null, obPresent = 0;
+    if(ob){
+      const rawDist = this.distanceToZone(setup.entry, ob);
+      if(rawDist !== null){
+        distOB    = rawDist / atr14;
+        obPresent = 1;
+        snapshot.raw.ob = {top: ob.top, bottom: ob.bottom, type: ob.type, barIdx: ob.barIdx};
+        snapshot.status.distOB = 'OK';
+      } else {
+        snapshot.status.distOB = 'NULL_CALC_FAIL';
+      }
+    } else {
+      snapshot.raw.ob = null;
+      snapshot.status.distOB = 'ABSENT_VALID';
+      // distOB queda null → obPresent = 0. NO sustituir por cero porque 0 = "dentro del OB".
+    }
+
+    // ── Feature 6: waveLabel (categórica) ──
+    const waveCategory = this.categorizeWave(setup.waveLabel);
+    snapshot.raw.waveLabelOriginal = setup.waveLabel || null;
+    snapshot.raw.waveCategory      = waveCategory;
+    snapshot.status.waveLabel      = (waveCategory === 'UNKNOWN') ? 'NULL_UNKNOWN' : 'OK';
+
+    // ── Determinar featureStatus global ──
+    const requiredOk = scoreNorm !== null;  // score es obligatorio
+    const optionalMissing = errors.length;
+    if(!requiredOk){
+      snapshot.featureStatus = 'FEATURES_INCOMPLETE';
+    } else if(optionalMissing > 0){
+      // Si solo faltan opcionales, igual marcamos pero permitimos predicción
+      snapshot.featureStatus = optionalMissing >= 2 ? 'FEATURES_INCOMPLETE' : 'READY';
+    } else {
+      snapshot.featureStatus = 'READY';
+    }
+
+    if(snapshot.featureStatus !== 'READY'){
+      return {features: null, featureStatus: snapshot.featureStatus, snapshot};
+    }
+
+    // ── Vector final (no se incluyen one-hot porque el modelo no está entrenado;
+    //    el snapshot las contiene si en el futuro se entrena con sklearn/TF) ──
+    const oneHot = this.WAVE_CATEGORIES.map(c => c === waveCategory ? 1 : 0);
+    const features = {
+      fvgSize, fvgPresent,
+      atrNorm,
+      isKillzone: kz.value,
+      killzoneKnown: kz.known ? 1 : 0,
+      scoreNorm,
+      distOB, obPresent,
+      waveOneHot: oneHot,
+      waveLabel:  waveCategory
+    };
+
+    snapshot.features = features;
+    return {features, featureStatus: 'READY', snapshot};
+  },
+
+  generateSnapshotId(){
+    return `snap_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  },
+
+  // ── Predicción (shadow mode) ────────────────────────────────
+  // Devuelve { state: 'READY'|'FEATURES_INCOMPLETE'|'MODEL_UNAVAILABLE'|'SCHEMA_MISMATCH',
+  //           probability: number|null, snapshot, modelVersion, schemaVersion }
+  predict(setup, data, zones){
+    const baseMeta = {
+      modelVersion:  this.MODEL_VERSION,
+      schemaVersion: this.SCHEMA_VERSION,
+    };
+
+    if(!setup || !data?.length){
+      return {state: 'FEATURES_INCOMPLETE', probability: null,
+              snapshot: null, ...baseMeta,
+              error: 'sin setup o data'};
+    }
+
+    // 1) Extraer features canónicas
+    const extraction = this.extractCanonicalFeatures(setup, data, zones);
+    if(extraction.featureStatus !== 'READY'){
+      return {state: extraction.featureStatus, probability: null,
+              snapshot: extraction.snapshot, ...baseMeta,
+              error: extraction.error || extraction.featureStatus};
+    }
+
+    // 2) Validar que existe modelo entrenado para este schema
+    if(!this.model){
+      return {state: 'MODEL_UNAVAILABLE', probability: null,
+              snapshot: extraction.snapshot, ...baseMeta,
+              error: 'modelo canónico v2 aún no entrenado'};
+    }
+
+    // 3) Validar schema del modelo cargado
+    if(this.loadedSchema && this.loadedSchema !== this.SCHEMA_VERSION){
+      return {state: 'SCHEMA_MISMATCH', probability: null,
+              snapshot: extraction.snapshot, ...baseMeta,
+              error: `schema cargado (${this.loadedSchema}) != esperado (${this.SCHEMA_VERSION})`};
+    }
+
+    // 4) Construir vector numérico para el modelo
+    //    Orden: [fvgSize, fvgPresent, atrNorm, isKillzone, scoreNorm, distOB||0, obPresent, ...waveOneHot]
+    const f = extraction.features;
+    const inputVec = [
+      f.fvgSize, f.fvgPresent,
+      f.atrNorm,
+      f.isKillzone === null ? 0.5 : f.isKillzone,    // null → 0.5 documentado
+      f.scoreNorm,
+      f.distOB === null ? 1.0 : f.distOB,            // null → 1.0 (lejos) documentado
+      f.obPresent,
+      ...f.waveOneHot
+    ];
+
+    try{
+      // Normalizar y predecir
+      const norm = inputVec.map((v,i)=>{
+        const range = (this.maxNorm?.[i] ?? 1) - (this.minNorm?.[i] ?? 0);
+        return range > 0 ? (v - this.minNorm[i]) / range : 0.5;
+      });
+      const tensor = tf.tensor2d([norm]);
+      const pred   = this.model.predict(tensor);
+      const prob   = Math.round(pred.dataSync()[0] * 100);
+      tensor.dispose(); pred.dispose();
+
+      return {state: 'READY', probability: prob,
+              snapshot: extraction.snapshot, ...baseMeta};
+    }catch(e){
+      return {state: 'MODEL_UNAVAILABLE', probability: null,
+              snapshot: extraction.snapshot, ...baseMeta,
+              error: `fallo de inferencia: ${e.message}`};
+    }
+  },
+
+  // ── Persistencia en localStorage (auditoría) ──
+  STORAGE_KEY: 'elliottict_v2_predictions',
+  persistPrediction(result, setup){
+    try{
+      const log = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+      log.unshift({
+        ts:           new Date().toISOString(),
+        symbol:       S.sym,
+        timeframe:    `${S.mult}${S.tf}`,
+        setupType:    setup?.type,
+        setupEntry:   setup?.entry,
+        modelVersion: result.modelVersion,
+        schemaVersion:result.schemaVersion,
+        state:        result.state,
+        probability:  result.probability,
+        featureSnapshotId: result.snapshot?.featureSnapshotId,
+        snapshot:     result.snapshot,
+        error:        result.error || null
+      });
+      // Mantener últimas 200 entradas
+      while(log.length > 200) log.pop();
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(log));
+    }catch(e){
+      console.warn('[CanonicalV2] persist error:', e.message);
+    }
+  }
+};
+
+// ── UI del modelo canonical-ict-v2 ───────────────────────────
+const CanonicalV2UI = {
+  setBadge(state){
+    const el = document.getElementById('v2-state-badge');
+    if(!el) return;
+    const cfg = {
+      READY:               {cls:'shadow',   txt:'SHADOW · EXPERIMENTAL'},
+      FEATURES_INCOMPLETE: {cls:'incomp',   txt:'FEATURES INCOMPLETE'},
+      MODEL_UNAVAILABLE:   {cls:'unavail',  txt:'MODEL UNAVAILABLE'},
+      SCHEMA_MISMATCH:     {cls:'mismatch', txt:'SCHEMA MISMATCH'},
+    };
+    const c = cfg[state] || cfg.READY;
+    el.className = `v2-state-badge ${c.cls}`;
+    el.textContent = c.txt;
+  },
+
+  render(result, legacyProb){
+    // Probabilidad legacy
+    const lProbEl  = document.getElementById('v2-legacy-prob');
+    const lStateEl = document.getElementById('v2-legacy-state');
+    if(legacyProb !== null && legacyProb !== undefined){
+      lProbEl.textContent = `${legacyProb}%`;
+      lStateEl.textContent = 'ACTIVE';
+      lStateEl.className = 'vmb-state active';
+    } else {
+      lProbEl.textContent = '—';
+      lStateEl.textContent = 'NO PREDICTION';
+      lStateEl.className = 'vmb-state error';
+    }
+
+    // Modelo canónico v2
+    const cProbEl  = document.getElementById('v2-canonical-prob');
+    const cStateEl = document.getElementById('v2-canonical-state');
+    const errEl    = document.getElementById('v2-error-msg');
+    const featsEl  = document.getElementById('v2-features-list');
+
+    if(result.state === 'READY' && result.probability !== null){
+      cProbEl.textContent = `${result.probability}%`;
+      cStateEl.textContent = 'SHADOW';
+      cStateEl.className = 'vmb-state shadow';
+      errEl.style.display = 'none';
+    } else {
+      cProbEl.textContent = '—';
+      cStateEl.textContent = result.state;
+      cStateEl.className = 'vmb-state error';
+      errEl.style.display = 'block';
+      errEl.textContent = result.error || result.state;
+    }
+    this.setBadge(result.state);
+
+    // Features
+    if(result.snapshot?.status){
+      featsEl.style.display = 'block';
+      const f = result.snapshot.features || {};
+      const s = result.snapshot.status;
+      const setRow = (key, value, status) => {
+        const v = document.getElementById(`v2f-${key}`);
+        const sl = document.getElementById(`v2s-${key}`);
+        if(v) v.textContent = (value === null || value === undefined) ? '—' :
+              (typeof value === 'number' ? value.toFixed(3) : String(value));
+        if(sl){
+          sl.textContent = status || '—';
+          sl.className = 'vfs ' + (status === 'OK' ? 'ok' :
+                                   status === 'ABSENT_VALID' ? 'null' :
+                                   status?.startsWith('NULL') ? 'null' : 'fail');
+        }
+      };
+      setRow('fvgSize',    f.fvgSize,    s.fvgSize);
+      setRow('atrNorm',    f.atrNorm,    s.atrNorm);
+      setRow('isKillzone', f.isKillzone, s.isKillzone);
+      setRow('score',      f.scoreNorm,  s.score);
+      setRow('distOB',     f.distOB,     s.distOB);
+      setRow('waveLabel',  f.waveLabel,  s.waveLabel);
+    } else {
+      featsEl.style.display = 'none';
+    }
+
+    // Metadata
+    const snapEl = document.getElementById('v2-meta-snapshot');
+    if(snapEl){
+      snapEl.textContent = `snapshot: ${result.snapshot?.featureSnapshotId || '—'}`;
+    }
+    const schemaEl = document.getElementById('v2-meta-schema');
+    if(schemaEl){
+      schemaEl.textContent = `schema: ${result.schemaVersion} · model: ${result.modelVersion}`;
+    }
+  }
+};
+
 const MLEngine = {
   model:   null,
   trained: false,
@@ -3124,25 +3737,58 @@ const MLEngine = {
   // Accuracy test: 52.9% | Features: [fvg_size, atr_norm, is_killzone, score, dist_ob, wave_code]
   PRETRAINED: {"weights":[[-0.37510812282562256,0.4174978733062744,0.6140586137771606,-0.25160571932792664,-0.2836398482322693,0.3281446695327759,-0.15898749232292175,-0.47800326347351074,0.3923708498477936,0.11749255657196045,0.7584799528121948,0.314645379781723,-0.2740843892097473,0.1859421581029892,-0.7960208058357239,-0.18900546431541443,-0.2585632801055908,-0.44152358174324036,-0.510570764541626,-0.19235242903232574,-0.4719126224517822,-0.528113603591919,-0.47838693857192993,0.45388683676719666,-0.3754172921180725,-0.5495882630348206,-0.17682266235351562,-0.37641996145248413,-0.21853050589561462,-0.5683653354644775,-0.3173786699771881,0.18514448404312134,-0.4462164640426636,-0.0849919319152832,-0.5415359139442444,0.2048715353012085,-0.514204204082489,0.20503242313861847,0.357494592666626,-0.015721797943115234,-0.35338544845581055,-0.36605575680732727,-0.5551316142082214,-0.6533768773078918,0.45123276114463806,-0.3966684341430664,0.34589922428131104,0.33898434042930603,-0.17921793460845947,-0.7404984831809998,-0.1481911689043045,-0.3152339458465576,-0.20399510860443115,-0.2938096523284912,-0.05253410339355469,-0.061306752264499664,-0.5102603435516357,0.0020636916160583496,-1.0244505405426025,-1.7036902904510498,-0.512647807598114,0.11568637192249298,0.5526182651519775,-0.4934658706188202,-0.34632599353790283,0.019769426435232162,-0.3818480968475342,0.20009487867355347,0.5299097895622253,-0.00847625732421875,0.4985423982143402,0.47062763571739197],[0.0,-0.32973605394363403,0.00791703537106514,0.0,0.0,-0.13942022621631622,0.0,-0.134721040725708,-0.4566466212272644,0.0,-0.36348459124565125,-0.1438770294189453],[0.34511256217956543,0.5136106014251709,0.04825788736343384,0.18417412042617798,0.3603906035423279,-0.49793148040771484,-0.4554325342178345,-0.47940337657928467,-0.13696128129959106,-0.569648027420044,-0.2585488557815552,-0.3232060670852661,0.49789440631866455,0.5861404538154602,-0.1842236965894699,0.5090952515602112,-0.4710659682750702,-0.08762092888355255,-0.5547681450843811,-0.5045984983444214,0.25173890590667725,-0.980573296546936,0.3971324861049652,0.048878636211156845,0.3580506443977356,-0.13341549038887024,-0.3930542469024658,-0.44317391514778137,0.24720019102096558,0.36352550983428955,-0.46128374338150024,-0.2741397023200989,-0.02809208631515503,-0.07390376925468445,0.16524994373321533,-0.14640358090400696,-0.22545650601387024,0.389870822429657,-0.13865947723388672,-0.39467981457710266,-0.23138365149497986,0.2909505367279053,0.22341974079608917,0.38776251673698425,-0.6560023427009583,-0.2591322362422943,0.06004035472869873,-0.41231769323349,0.13584089279174805,0.4628192186355591,-0.22018054127693176,0.20515018701553345,0.4209502935409546,0.12561631202697754,0.10245442390441895,0.014625012874603271,-0.09223032742738724,0.40758901834487915,-0.4459536671638489,0.22911179065704346,-0.4516340494155884,-0.41492876410484314,0.4730600118637085,-0.36072811484336853,0.15624617040157318,0.03206579014658928,0.026600666344165802,0.21534813940525055,0.13413986563682556,-1.0596706867218018,0.48187312483787537,0.5238302946090698,0.27988290786743164,0.3897131681442261,-0.39713773131370544,-0.23994165658950806,0.4347255825996399,-0.23184967041015625,-0.21917423605918884,0.5136382579803467,0.24714121222496033,0.1565970778465271,-0.025387650355696678,0.16482298076152802,-0.25201505422592163,-0.8753706216812134,0.24786610901355743,0.8751540780067444,-0.6830863356590271,-0.1544865369796753,0.05257325619459152,-0.6115418672561646,-0.1486309915781021,0.7029802203178406,0.43652307987213135,0.3371553122997284],[-0.317958801984787,-0.19760553538799286,-0.11087651550769806,-0.20645436644554138,0.050313957035541534,0.1334870159626007,-0.16179309785366058,-0.0383211225271225],[0.14091980457305908,0.11688065528869629,-0.7554315328598022,0.014942090958356857,0.14723443984985352,1.0443638563156128,-0.37005582451820374,-0.7724466919898987],[0.07599598169326782]],"minNorm":[0.03999999910593033,0.03724394738674164,0.5,0.02800000086426735,0.0,0.10000000149011612],"maxNorm":[1.0,1.0,0.5,1.0,1.0,0.8999999761581421],"trainedAt":"2026-06-19T13:25:05.932601+00:00","samples":698,"accuracy_test":0.5285714268684387,"win_rate_dataset":0.49713465571403503},
 
-  // Codificar onda Elliott a número
+  // Codificar onda Elliott a número (mismo mapeo del entrenamiento)
   waveCode(label){
-    const m = {'1':0.1,'2':0.2,'3':0.9,'4':0.4,'5':0.6,'A':0.3,'B':0.1,'C':0.7};
-    return m[label] || 0.5;
+    const m = {
+      '1':0.1,'2':0.2,'3':0.9,'4':0.4,'5':0.6,
+      'A':0.3,'B':0.1,'C':0.7,
+      '(1)':0.1,'(2)':0.2,'(3)':0.9,'(4)':0.4,'(5)':0.6,
+      '(i)':0.1,'(ii)':0.2,'(iii)':0.9,'(iv)':0.4,'(v)':0.6,
+      'i':0.1,'ii':0.2,'iii':0.9,'iv':0.4,'v':0.6
+    };
+    const s = String(label || '').trim();
+    if(m[s] !== undefined) return m[s];
+    // Buscar substring (ej. "wave 3" → 0.9)
+    for(const k in m){ if(s.includes(k)) return m[k]; }
+    return 0.5;
   },
 
-  // Extraer features de un setup + datos OHLCV
+  // Extraer 6 features alineadas con el modelo entrenado sobre 698 análisis de Marat.
+  // IMPORTANTE: el orden y la semántica deben ser idénticos a train_model.py:
+  //   [fvg_size, atr_norm, is_killzone, score, dist_ob, wave_code]
   extractFeatures(setup, data, zones){
-    const meta    = getMeta(S.sym);
-    const atr     = data.slice(-14).reduce((s,d)=>s+(d.h-d.l),0)/14 || 1;
-    const fvgSize = setup.fvgQual?.gapSize ? setup.fvgQual.gapSize / atr : 0;
-    const atrNorm = atr / (data.at(-1)?.c || 1);
-    const isKZ    = setup.metadata?.inKillzone ? 1 : 0;
-    const score   = (setup.score || 0) / 100;
-    const nearOB  = zones?.obs?.length
-      ? Math.min(...zones.obs.map(o=>Math.abs(o.top - setup.entry))) / atr
-      : 1;
-    const wave    = this.waveCode(setup.waveLabel);
-    return [fvgSize, atrNorm, isKZ, score, Math.min(nearOB, 3)/3, wave];
+    const entry   = setup.entry;
+    const sl      = setup.sl;
+    const tp1     = setup.tp1;
+    const lastC   = data?.at(-1)?.c || entry || 1;
+    const slSize  = Math.abs(entry - sl) || (lastC * 0.001);
+    const tpSize  = tp1 ? Math.abs(entry - tp1) : slSize * 2;
+
+    // F0: tp/sl normalizado a 0..1 (clamped a 5R máximo) — proxy de "fvg_size" en train
+    const f0 = Math.min(tpSize / slSize, 5.0) / 5.0;
+
+    // F1: sl relativo al precio (volatilidad implícita), clamped a 5% — proxy de "atr_norm"
+    const f1 = Math.min(slSize / (entry || lastC), 0.05) / 0.05;
+
+    // F2: killzone (en el entrenamiento siempre 0.5 porque los PDFs no tenían sesión;
+    // aquí preservamos la señal real con un peso ligero centrado en 0.5)
+    const inKZ = setup.metadata?.inKillzone ? 1 : 0;
+    const f2   = inKZ ? 0.7 : 0.3;
+
+    // F3: score heurístico combinando R:R y calidad — coincide con la fórmula de train
+    const rr      = tpSize / slSize;
+    const rrNorm  = Math.min(Math.max(rr, 0), 5.0) / 5.0;
+    const hasAlt  = setup.metadata?.hasAlternative ? 1 : 0;
+    const f3      = (rrNorm * 0.7) + ((1 - hasAlt) * 0.3);
+
+    // F4: cercanía del precio actual al entry, normalizado por el SL — proxy de "dist_ob"
+    const dist = Math.abs(lastC - entry) / slSize;
+    const f4   = Math.min(dist, 3.0) / 3.0;
+
+    // F5: wave_code
+    const f5 = this.waveCode(setup.waveLabel);
+
+    return [f0, f1, f2, f3, f4, f5];
   },
 
   // Simular resultado histórico: TP1 alcanzado antes que SL en la data posterior
@@ -3380,11 +4026,41 @@ function checkAndAlert(){
   // Alertas
   if(AlertEngine.shouldAlert(setup)) AlertEngine.fire(setup);
 
+  // Evaluador: revisar trades pendientes con los datos actuales
+  Evaluator.evaluate(S.data);
+
   // MTF: cargar análisis superior
   if(S.data.length > 0) MTF.load();
 
-  // ML: predecir si el modelo está entrenado
-  if(MLEngine.trained) MLEngine.predict();
+  // ── ML legacy (puede modificar UI del tab ML) ──
+  let legacyProb = null;
+  if(MLEngine.trained){
+    MLEngine.predict();
+    // Capturamos su probabilidad después de que MLEngine.predict() actualice el DOM
+    const probEl = document.getElementById('ml-prob');
+    if(probEl){
+      const txt = probEl.textContent.replace('%','').trim();
+      legacyProb = /^\d+$/.test(txt) ? parseInt(txt, 10) : null;
+    }
+  }
+
+  // ── canonical-ict-v2 (SHADOW MODE — NUNCA modifica señal) ──
+  // Esta predicción es solo de auditoría. No toca alertas, score, entry, SL, TP.
+  try{
+    const v2Result = CanonicalV2.predict(setup, S.data, S.zones);
+    CanonicalV2UI.render(v2Result, legacyProb);
+    CanonicalV2.persistPrediction(v2Result, setup);
+  }catch(e){
+    console.warn('[canonical-ict-v2] error shadow:', e);
+    CanonicalV2UI.render({
+      state: 'MODEL_UNAVAILABLE',
+      probability: null,
+      snapshot: null,
+      modelVersion: CanonicalV2.MODEL_VERSION,
+      schemaVersion: CanonicalV2.SCHEMA_VERSION,
+      error: `excepción: ${e.message}`
+    }, legacyProb);
+  }
 }
 
 (function init(){
